@@ -1,11 +1,19 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from recipes.models import ShopList
 from users.models import CustomUser, Subscription
 
 
 class SubscriptionInline(admin.TabularInline):
     """Inline for users administration."""
     model = Subscription
+    fk_name = "user"
+    extra = 0
+
+
+class ShopListInline(admin.TabularInline):
+    """Inline for users administration."""
+    model = ShopList
     fk_name = "user"
     extra = 0
 
@@ -48,6 +56,7 @@ class CustomUserAdmin(UserAdmin):
     ordering = ('email',)
     inlines = [
         SubscriptionInline,
+        ShopListInline,
     ]
 
 
