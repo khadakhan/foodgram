@@ -64,6 +64,8 @@ class Recipe(models.Model):
     image = models.ImageField(
         upload_to='recipes/',
         verbose_name='Фото рецепта',
+        null=True,
+        blank=True
     )
     text = models.TextField(
         verbose_name='Текст рецепта',
@@ -90,6 +92,7 @@ class Recipe(models.Model):
         through='RecipeTag',
         verbose_name='Теги',
     )
+    short_link = models.URLField(null=True, blank=True)
 
     class Meta:
         verbose_name = 'рецепт'
@@ -114,16 +117,6 @@ class RecipeTag(models.Model):
         related_name='tag_recipes',
         verbose_name='Тег',
     )
-
-    # class Meta:
-    #     verbose_name = 'избранное'
-    #     verbose_name_plural = 'Избранное'
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=['user', 'recipe'],
-    #             name='unique_user_recipe'
-    #         )
-    #     ]
 
 
 class RecipeIngredientsAmount(models.Model):

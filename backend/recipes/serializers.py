@@ -19,8 +19,7 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
-
-# ------------------------------рецепты------------------------
+# ------------------------------рецепты-список--------------------------
 
 
 class RecipeIngredientAmountSerializer(serializers.ModelSerializer):
@@ -82,7 +81,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         ):
             return True
         return False
-# -----------------------------------------------------
+# ----------------------рецепты создание-------------------------
 
 
 class IdAmountSerializer(serializers.Serializer):
@@ -92,7 +91,7 @@ class IdAmountSerializer(serializers.Serializer):
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IdAmountSerializer(many=True)
-    image = Base64ImageField(required=False, allow_null=True)
+    image = serializers.SerializerMethodField()
     tags = serializers.ListField(child=serializers.IntegerField())
 
     class Meta:
@@ -106,22 +105,19 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    # def create(self, validated_data):
-    #     id_amount = validated_data.pop('ingredients')
-    #     user = self.context['request'].user
-    #     tags = validated_data.pop('tags')
-    #     recipe = Recipe.objects.create(**validated_data, author=user)
-    #     for dict in id_amount:
-    #         current_ingredient = Ingredient.objects.get(pk=dict['id'])
-    #         RecipeIngredientsAmount.objects.create(
-    #             recipe=recipe,
-    #             ingredient=current_ingredient,
-    #             amount=dict['amount']
-    #         )
-    #     for id in tags:
-    #         current_tag = Tag.objects.get(pk=id)
-    #         RecipeTag.objects.create(
-    #             recipe=recipe,
-    #             tag=current_tag,
-    #         )
-    #     return recipe
+    def get_image(self, obj):
+        if self.context['request'].method == 'PATCH':
+            return Base64ImageField(required=False, allow_null=True)
+        return Base64ImageField(required=True)
+# -------------------------------------------------------------------------
+
+
+class ShortLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = [
+            'short-link',
+        ]
+        extra_kwargs = {
+            'short-link': {'source': 'short_link'},
+        }
