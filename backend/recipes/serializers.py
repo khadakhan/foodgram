@@ -19,7 +19,6 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
-# ------------------------------рецепты-список--------------------------
 
 
 class RecipeIngredientAmountSerializer(serializers.ModelSerializer):
@@ -81,7 +80,6 @@ class RecipeSerializer(serializers.ModelSerializer):
         ):
             return True
         return False
-# ----------------------рецепты создание-------------------------
 
 
 class IdAmountSerializer(serializers.Serializer):
@@ -109,7 +107,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         if self.context['request'].method == 'PATCH':
             return Base64ImageField(required=False, allow_null=True)
         return Base64ImageField(required=True)
-# -------------------------------------------------------------------------
 
 
 class ShortLinkSerializer(serializers.ModelSerializer):
@@ -121,3 +118,14 @@ class ShortLinkSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'short-link': {'source': 'short_link'},
         }
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time'
+        )

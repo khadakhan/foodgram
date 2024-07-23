@@ -12,7 +12,8 @@ from recipes.models import (Favorite,
                             ShopList,
                             Tag)
 from recipes.permissions import IsAuthor
-from recipes.serializers import (IngredientSerializer,
+from recipes.serializers import (FavoriteSerializer,
+                                 IngredientSerializer,
                                  RecipeSerializer,
                                  RecipeCreateSerializer,
                                  ShortLinkSerializer,
@@ -89,9 +90,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return RecipeCreateSerializer
         if self.action == 'get_short_link':
             return ShortLinkSerializer
+        if self.action == 'add_delete_favorite':
+            return FavoriteSerializer
         return RecipeSerializer
-
-# ----------вспомогательные методы начало-----------------
 
     def create_new_ingredients(self, id_amount, recipe):
         for item in id_amount:
@@ -109,8 +110,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe=recipe,
                 tag=current_tag,
             )
-
-# ---------вспомогательные методы конец-------------------
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -178,3 +177,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'destroy':
             return (IsAuthor(),)
         return super().get_permissions()
+
+    @action(
+        methods=['post', 'delete'],
+        detail=False,
+        url_path=r'(?P<id>\d+)/favorite'
+    )
+    def add_delete_favorite(self, request, id):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if request.method == 'POST':
+            curr_recipe, get_status = Favorite.objects.get_or_create(
+                recipe=recipe,
+                user=user,
+            )
+            if get_status is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer(recipe)
+            return Response(serializer.data, status.HTTP_201_CREATED)
+        if Favorite.objects.filter(user=user, recipe=recipe).exists():
+            Favorite.objects.filter(user=user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
