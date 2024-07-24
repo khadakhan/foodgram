@@ -1,8 +1,10 @@
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 import short_url
+import pandas as pd
 
 from recipes.models import (Favorite,
                             Ingredient,
@@ -11,11 +13,12 @@ from recipes.models import (Favorite,
                             RecipeTag,
                             ShopList,
                             Tag)
-from recipes.permissions import IsAuthor
+from recipes.permissions import IsAuthor, IsAuthenticated
 from recipes.serializers import (FavoriteSerializer,
                                  IngredientSerializer,
                                  RecipeSerializer,
                                  RecipeCreateSerializer,
+                                 RecipeUpdateSerializer,
                                  ShortLinkSerializer,
                                  TagSerializer)
 from users.pagination import UsersPagination
@@ -87,29 +90,46 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return RecipeCreateSerializer
         if self.action == 'partial_update':
-            return RecipeCreateSerializer
+            return RecipeUpdateSerializer
         if self.action == 'get_short_link':
             return ShortLinkSerializer
         if self.action == 'add_delete_favorite':
             return FavoriteSerializer
+        if self.action == 'add_delete_shopping_cart':
+            return FavoriteSerializer
         return RecipeSerializer
 
     def create_new_ingredients(self, id_amount, recipe):
+        if not id_amount:
+            return False
+        for item in id_amount:
+            if id_amount.count(item) > 1:
+                return False
+
         for item in id_amount:
             current_ingredient = get_object_or_404(Ingredient, pk=item['id'])
+            if item['amount'] < 1:
+                return False
             RecipeIngredientsAmount.objects.create(
                 recipe=recipe,
                 ingredient=current_ingredient,
                 amount=item['amount']
             )
+        return True
 
     def create_new_tags(self, tags, recipe):
-        for id in tags:
-            current_tag = Tag.objects.get(pk=id)
+        if not tags:
+            return False
+        for tag in tags:
+            if tags.count(tag) > 1:
+                return False
+        for tag_id in tags:
+            current_tag = get_object_or_404(Tag, pk=tag_id)
             RecipeTag.objects.create(
                 recipe=recipe,
                 tag=current_tag,
             )
+        return True
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -119,8 +139,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
         tags = validated_data.pop('tags')
         user = request.user
         recipe = Recipe.objects.create(**validated_data, author=user)
-        self.create_new_ingredients(id_amount, recipe)
-        self.create_new_tags(tags, recipe)
+        if (
+            not self.create_new_ingredients(id_amount, recipe)
+            or not self.create_new_tags(tags, recipe)
+        ):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
         instance_serializer = RecipeSerializer(
             recipe,
             context={'request': request}
@@ -147,8 +171,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         tags = validated_data['tags']
         recipe.recipe_tags.all().delete()
         recipe.ingredient_amount.all().delete()
-        self.create_new_ingredients(id_amount, recipe)
-        self.create_new_tags(tags, recipe)
+        if (
+            not self.create_new_ingredients(id_amount, recipe)
+            or not self.create_new_tags(tags, recipe)
+        ):
+            return Response(status=status.HTTP_400_BAD_REQUEST)
         instance_serializer = RecipeSerializer(
             recipe,
             context={'request': request}
@@ -176,6 +203,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'destroy':
             return (IsAuthor(),)
+        if self.action == 'download_shopping_cart':
+            return (IsAuthenticated(),)
         return super().get_permissions()
 
     @action(
@@ -199,3 +228,68 @@ class RecipeViewSet(viewsets.ModelViewSet):
             Favorite.objects.filter(user=user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['post', 'delete'],
+        detail=False,
+        url_path=r'(?P<id>\d+)/shopping_cart'
+    )
+    def add_delete_shopping_cart(self, request, id):
+        recipe = get_object_or_404(Recipe, pk=id)
+        user = request.user
+        if request.method == 'POST':
+            curr_recipe, get_status = ShopList.objects.get_or_create(
+                recipe=recipe,
+                user=user,
+            )
+            if get_status is False:
+                return Response(status=status.HTTP_400_BAD_REQUEST)
+            serializer = self.get_serializer(recipe)
+            return Response(serializer.data, status.HTTP_201_CREATED)
+        if ShopList.objects.filter(user=user, recipe=recipe).exists():
+            ShopList.objects.filter(user=user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    @action(
+        methods=['get',],
+        detail=False,
+        url_path='download_shopping_cart'
+    )
+    def download_shopping_cart(self, request):
+        user = request.user
+        user_recipes_in_shopping_cart = list(
+            user.what_by_user.all().values_list(
+                'recipe',
+                flat=True
+            )
+        )
+        recipe_ingredient_amount = []
+        for recipe_id in user_recipes_in_shopping_cart:
+            recipe_ingredient_amount += list(
+                RecipeIngredientsAmount.objects.filter(
+                    recipe=recipe_id
+                )
+            )
+        shop_list = []
+        for item in recipe_ingredient_amount:
+            shop_list.append(
+                [
+                    item.ingredient.name,
+                    item.amount,
+                    item.ingredient.measurement_unit
+                ]
+            )
+        df = pd.DataFrame(shop_list, columns=['Ingredient', 'amount', 'unit'])
+        df_grouped = df.groupby(['Ingredient', 'unit']).amount.sum()
+        df_grouped.to_csv('recipes/shop_list/shop_list.csv')
+        with open('recipes/shop_list/shop_list.csv', 'rb') as f:
+            data = f.read()
+        response = HttpResponse(
+            data,
+            content_type='text/csv',
+            headers={
+                "Content-Disposition": 'attachment; filename="shop_list.csv"'
+            },
+        )
+        return response

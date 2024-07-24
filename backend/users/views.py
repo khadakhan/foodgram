@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from users.models import Subscription
 from users.pagination import UsersPagination
+from users.permissions import AllowAny
 from users.serializers import (
     SubscriptionSerializer,
     UserAvatarSerializer,
@@ -50,19 +51,21 @@ class CustomUserViewSet(UserViewSet):
         if (self.action == 'list' or self.action == 'retrieve'
            or self.action == 'me'):
             return UserListRetrieveSerializer
-        if self.action == 'subscriptions':                                   #
-            return SubscriptionSerializer                                    #
-        if self.action == 'create_subscription':                             #
-            return SubscriptionSerializer                                    #
+        if self.action == 'subscriptions':
+            return SubscriptionSerializer
+        if self.action == 'create_subscription':
+            return SubscriptionSerializer
         return super().get_serializer_class()
 
     def get_permissions(self):
+        if self.action == 'list':
+            return (AllowAny(),)
         if self.action == 'retrieve':
             self.permission_classes = settings.PERMISSIONS.token_create
-        if self.action == 'subscriptions':                                   #
-            self.permission_classes = settings.PERMISSIONS.token_destroy     #
-        if self.action == 'create_subscription':                             #
-            self.permission_classes = settings.PERMISSIONS.token_destroy     #
+        if self.action == 'subscriptions':
+            self.permission_classes = settings.PERMISSIONS.token_destroy
+        if self.action == 'create_subscription':
+            self.permission_classes = settings.PERMISSIONS.token_destroy
         return super().get_permissions()
 
 # ------------------------------список-подписок-------------------------

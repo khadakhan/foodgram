@@ -89,8 +89,9 @@ class IdAmountSerializer(serializers.Serializer):
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IdAmountSerializer(many=True)
-    image = serializers.SerializerMethodField()
     tags = serializers.ListField(child=serializers.IntegerField())
+    image = Base64ImageField()
+    cooking_time = serializers.IntegerField()
 
     class Meta:
         model = Recipe
@@ -103,10 +104,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def get_image(self, obj):
-        if self.context['request'].method == 'PATCH':
-            return Base64ImageField(required=False, allow_null=True)
-        return Base64ImageField(required=True)
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise serializers.ValidationError('Проверьте год рождения!')
+        return value
+
+
+class RecipeUpdateSerializer(RecipeCreateSerializer):
+    image = Base64ImageField(required=False, allow_null=True)
 
 
 class ShortLinkSerializer(serializers.ModelSerializer):
