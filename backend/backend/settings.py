@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'djoser',
     'debug_toolbar',   # для DjDT
-    'django_filters',
+    # 'django_filters',
 ]
 
 MIDDLEWARE = [
@@ -157,19 +157,10 @@ MEDIA_URL = 'media/'
 # настройки аутентификации и авторизации JWT + Djoser
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        # 'rest_framework.permissions.AllowAny',
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
-
-
-# SIMPLE_JWT = {
-#     # Устанавливаем срок жизни токена
-#     'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
-#     'AUTH_HEADER_TYPES': ('Bearer',),
-# }
