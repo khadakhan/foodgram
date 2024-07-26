@@ -184,7 +184,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        methods=['get',],
+        methods=['get'],
         detail=False,
         url_path=r'(?P<id>\d+)/get-link'
     )
@@ -251,7 +251,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     @action(
-        methods=['get',],
+        methods=['get'],
         detail=False,
         url_path='download_shopping_cart'
     )
