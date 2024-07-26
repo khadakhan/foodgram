@@ -14,7 +14,7 @@ services:
       - pg_data:/var/lib/postgresql/data
 
   backend:
-    image: khadakhan/kittygram_backend
+    image: khadakhan/foodgram_backend
     env_file: .env
     volumes:
       - static:/backend_static
@@ -23,17 +23,17 @@ services:
       - db
       
   frontend:
-    image: khadakhan/kittygram_frontend
+    image: khadakhan/foodgram_frontend
     env_file: .env
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
 
   gateway:
-    image: khadakhan/kittygram_gateway
+    image: khadakhan/foodgram_gateway
     env_file: .env
     ports:
-      - 9000:80
+      - 8500:80
     volumes:
       - static:/static
       - media:/app/media
