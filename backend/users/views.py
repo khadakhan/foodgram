@@ -5,7 +5,6 @@ from djoser.views import TokenCreateView, UserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
 from users.models import Subscription
 from users.pagination import UsersPagination
 from users.permissions import AllowAny
