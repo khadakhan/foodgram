@@ -157,7 +157,7 @@ class CustomTokenCreateView(TokenCreateView):
     """Redefinition TokenCreateView because of status_code."""
     def _action(self, serializer):
         custom_response = super()._action(serializer)
-        custom_response.status_code = status.HTTP_201_CREATED
+        # custom_response.status_code = status.HTTP_201_CREATED
         return custom_response
 
 # =============================Recipes=======================================
@@ -184,15 +184,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
 
     def get_queryset(self):
+        user = self.request.user
         queryset = Recipe.objects.all()
-        recipes_is_in_favorite = Favorite.objects.all().values_list(
-            'recipe',
-            flat=True
-        )
-        recipes_is_in_shopping_cart = ShopList.objects.all().values_list(
-            'recipe',
-            flat=True
-        )
+        if user.is_authenticated:
+            in_favorite = user.recipes_in_favorites.all().values_list(
+                'recipe',
+                flat=True
+            )
+            in_shopping_cart = user.what_by_user.all().values_list(
+                'recipe',
+                flat=True
+            )
         author_id = self.request.query_params.get('author')
         is_favorited = self.request.query_params.get('is_favorited')
         is_in_shopping_cart = self.request.query_params.get(
@@ -202,23 +204,30 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if author_id is not None and author_id.isdigit():
             queryset = queryset.filter(author=author_id)
         if is_favorited == '1':
-            queryset = queryset.filter(id__in=recipes_is_in_favorite)
+            queryset = queryset.filter(id__in=in_favorite)
         if is_in_shopping_cart == '1':
-            queryset = queryset.filter(id__in=recipes_is_in_shopping_cart)
+            queryset = queryset.filter(id__in=in_shopping_cart)
         if tag_slugs:
-            tags = Tag.objects.filter(slug__in=tag_slugs)
-            tag_recipe_queryset_id = RecipeTag.objects.all().values_list(
+            tags = Tag.objects.filter(slug__in=tag_slugs).all()
+            # tag_recipe_queryset_id = RecipeTag.objects.all().values_list(
+            #     'recipe',
+            #     flat=True
+            # )
+            # for tag in tags:
+            #     tag_recipes_id = tag.tag_recipes.all().values_list(
+            #         'recipe',
+            #         flat=True
+            #     )
+            #     tag_recipe_queryset_id = (
+            #         tag_recipe_queryset_id.intersection(tag_recipes_id)
+            #     )
+
+            tag_recipe_queryset_id = RecipeTag.objects.filter(
+                tag__in=tags
+            ).values_list(
                 'recipe',
                 flat=True
             )
-            for tag in tags:
-                tag_recipes_id = tag.tag_recipes.all().values_list(
-                    'recipe',
-                    flat=True
-                )
-                tag_recipe_queryset_id = (
-                    tag_recipe_queryset_id.intersection(tag_recipes_id)
-                )
 
             queryset = queryset.filter(id__in=tag_recipe_queryset_id)
         return queryset
@@ -237,16 +246,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def create_new_ingredients(self, id_amount, recipe):
-        if not id_amount:
-            return False
-        for item in id_amount:
-            if id_amount.count(item) > 1:
-                return False
+        # if not id_amount:
+        #     return False
+        # for item in id_amount:
+        #     if id_amount.count(item) > 1:
+        #         return False
 
         for item in id_amount:
             current_ingredient = get_object_or_404(Ingredient, pk=item['id'])
-            if item['amount'] < 1:
-                return False
+            # if item['amount'] < 1:
+            #     return False
             RecipeIngredientsAmount.objects.create(
                 recipe=recipe,
                 ingredient=current_ingredient,
@@ -255,11 +264,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return True
 
     def create_new_tags(self, tags, recipe):
-        if not tags:
-            return False
-        for tag in tags:
-            if tags.count(tag) > 1:
-                return False
+        # if not tags:
+        #     return False
+        # for tag in tags:
+        #     if tags.count(tag) > 1:
+        #         return False
         for tag_id in tags:
             current_tag = get_object_or_404(Tag, pk=tag_id)
             RecipeTag.objects.create(
@@ -280,7 +289,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             not self.create_new_ingredients(id_amount, recipe)
             or not self.create_new_tags(tags, recipe)
         ):
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                data={'error_message': 'проверьте ингредиенты или теги'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         instance_serializer = RecipeSerializer(
             recipe,

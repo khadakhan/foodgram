@@ -201,6 +201,13 @@ class IdAmountSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
 
+    def validate_id(self, value):
+        if value < 1:
+            serializers.ValidationError(
+                'Количество ингеридента должно быть положительное целое число'
+            )
+        return value
+
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IdAmountSerializer(many=True)
@@ -219,9 +226,45 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
+    def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError('Заполните ингредиенты.')
+        id_list = [item['id'] for item in value]
+
+        for id in id_list:
+            if id_list.count(id) > 1:
+                raise serializers.ValidationError(
+                    'Ингредиенты в рецепте не должны повторяться.'
+                )
+            if not Ingredient.objects.filter(pk=id).exists():
+                raise serializers.ValidationError(
+                    'Такого ингредиента нет.'
+                )
+        for item in value:
+            if item['amount'] < 1:
+                raise serializers.ValidationError(
+                    'Количество ингредиента должно быть целое число'
+                    ' больше нуля.'
+                )
+        return value
+
     def validate_cooking_time(self, value):
         if value < 1:
-            raise serializers.ValidationError('Проверьте год рождения!')
+            raise serializers.ValidationError('Проверьте время приготовления.')
+        return value
+
+    def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError('Заполните теги.')
+        for tag_id in value:
+            if value.count(tag_id) > 1:
+                raise serializers.ValidationError(
+                    'Теги в рецепте не должны повторяться.'
+                )
+            if not Tag.objects.filter(pk=tag_id).exists():
+                raise serializers.ValidationError(
+                    'Такого тега нет.'
+                )
         return value
 
 
