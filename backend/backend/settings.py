@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'djoser',
     'debug_toolbar',   # для DjDT
-    'django_filters',
+    # 'django_filters',
 ]
 
 MIDDLEWARE = [
