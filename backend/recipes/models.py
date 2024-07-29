@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from recipes.validators import not_zero_validator
+
 TITLE_LENGTH = 200
 TAG_LENGTH = 32
 MEASUREMENT_UNIT_LENGTH = 64
@@ -64,14 +66,13 @@ class Recipe(models.Model):
     image = models.ImageField(
         upload_to='recipes/images/',
         verbose_name='Фото рецепта',
-        # null=True,
-        # blank=True
     )
     text = models.TextField(
         verbose_name='Текст рецепта',
     )
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время приготовления в минутах'
+        verbose_name='Время приготовления в минутах',
+        validators=(not_zero_validator,),
     )
     created_at = models.DateTimeField(
         verbose_name='Дата публикации',
@@ -134,6 +135,7 @@ class RecipeIngredientsAmount(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
+        validators=(not_zero_validator,),
     )
 
     class Meta:
@@ -201,6 +203,12 @@ class ShopList(models.Model):
     class Meta:
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_user_recipe'
+            )
+        ]
 
     def __str__(self):
         return self.user.username

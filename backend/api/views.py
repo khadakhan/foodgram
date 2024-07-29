@@ -223,16 +223,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return RecipeSerializer
 
     def create_new_ingredients(self, id_amount, recipe):
-        # if not id_amount:
-        #     return False
-        # for item in id_amount:
-        #     if id_amount.count(item) > 1:
-        #         return False
-
         for item in id_amount:
             current_ingredient = get_object_or_404(Ingredient, pk=item['id'])
-            # if item['amount'] < 1:
-            #     return False
             RecipeIngredientsAmount.objects.create(
                 recipe=recipe,
                 ingredient=current_ingredient,
@@ -241,11 +233,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return True
 
     def create_new_tags(self, tags, recipe):
-        # if not tags:
-        #     return False
-        # for tag in tags:
-        #     if tags.count(tag) > 1:
-        #         return False
         for tag_id in tags:
             current_tag = get_object_or_404(Tag, pk=tag_id)
             RecipeTag.objects.create(
@@ -406,16 +393,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     item.ingredient.measurement_unit
                 ]
             )
-        df = pd.DataFrame(shop_list, columns=['Ingredient', 'amount', 'unit'])
-        df_grouped = df.groupby(['Ingredient', 'unit']).amount.sum()
+        df = pd.DataFrame(shop_list, columns=['ingredient', 'amount', 'unit'])
+        df_grouped = df.groupby(['ingredient', 'unit']).amount.sum()
         df_grouped.to_csv('recipes/shop_list/shop_list.csv')
         with open('recipes/shop_list/shop_list.csv', 'rb') as f:
             data = f.read()
         response = HttpResponse(
             data,
-            content_type='text/csv',
+            content_type='text',
             headers={
-                "Content-Disposition": 'attachment; filename="shop_list.csv"'
+                "Content-Disposition": 'attachment; filename="shop_list.txt"'
             },
         )
         return response

@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 
 MAX_EMAIL_LENGTH = 254
@@ -43,6 +44,10 @@ class Subscription(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name='subscriptions')
     subscription = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name='subscribers')
+
+    def clean(self):
+        if self.user == self.subscription:
+            raise ValidationError('Нельзя подписаться на себя')
 
     class Meta:
         verbose_name = 'подписка'
