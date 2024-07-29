@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser.conf import settings
-from djoser.views import TokenCreateView, UserViewSet
+from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -150,15 +150,6 @@ class CustomUserViewSet(UserViewSet):
         # создаем подписку
         Subscription.objects.create(user=user, subscription=subscription)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-# ----------------------------------------------------------------------
-
-
-# class CustomTokenCreateView(TokenCreateView):
-#     """Redefinition TokenCreateView because of status_code."""
-#     def _action(self, serializer):
-#         custom_response = super()._action(serializer)
-#         # custom_response.status_code = status.HTTP_201_CREATED
-#         return custom_response
 
 # =============================Recipes=======================================
 
