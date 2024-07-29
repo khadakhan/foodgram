@@ -9,7 +9,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
-    ShopList,
+    # ShopList,
     Tag
 )
 
