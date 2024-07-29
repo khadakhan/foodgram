@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from rest_framework import serializers
 
 from recipes.models import (
-    Favorite,
+    # Favorite,
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
@@ -191,7 +191,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             else:
                 return False
         return False
-
 
     def get_is_in_shopping_cart(self, obj):
         if obj.id in ShopList.objects.all().values_list(
