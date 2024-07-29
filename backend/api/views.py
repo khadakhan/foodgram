@@ -153,12 +153,12 @@ class CustomUserViewSet(UserViewSet):
 # ----------------------------------------------------------------------
 
 
-class CustomTokenCreateView(TokenCreateView):
-    """Redefinition TokenCreateView because of status_code."""
-    def _action(self, serializer):
-        custom_response = super()._action(serializer)
-        # custom_response.status_code = status.HTTP_201_CREATED
-        return custom_response
+# class CustomTokenCreateView(TokenCreateView):
+#     """Redefinition TokenCreateView because of status_code."""
+#     def _action(self, serializer):
+#         custom_response = super()._action(serializer)
+#         # custom_response.status_code = status.HTTP_201_CREATED
+#         return custom_response
 
 # =============================Recipes=======================================
 
@@ -186,6 +186,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Recipe.objects.all()
+        author_id = self.request.query_params.get('author')
+        is_favorited = self.request.query_params.get('is_favorited')
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart'
+        )
+        tag_slugs = self.request.query_params.getlist('tags')
+        if author_id is not None and author_id.isdigit():
+            queryset = queryset.filter(author=author_id)
+        if tag_slugs:
+            tags = Tag.objects.filter(slug__in=tag_slugs).all()
+            tag_recipe_queryset_id = RecipeTag.objects.filter(
+                tag__in=tags
+            ).values_list(
+                'recipe',
+                flat=True
+            )
+            queryset = queryset.filter(id__in=tag_recipe_queryset_id)
         if user.is_authenticated:
             in_favorite = user.recipes_in_favorites.all().values_list(
                 'recipe',
@@ -195,40 +212,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'recipe',
                 flat=True
             )
-        author_id = self.request.query_params.get('author')
-        is_favorited = self.request.query_params.get('is_favorited')
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart'
-        )
-        tag_slugs = self.request.query_params.getlist('tags')
-        if author_id is not None and author_id.isdigit():
-            queryset = queryset.filter(author=author_id)
-        if is_favorited == '1':
-            queryset = queryset.filter(id__in=in_favorite)
-        if is_in_shopping_cart == '1':
-            queryset = queryset.filter(id__in=in_shopping_cart)
-        if tag_slugs:
-            tags = Tag.objects.filter(slug__in=tag_slugs).all()
-            # tag_recipe_queryset_id = RecipeTag.objects.all().values_list(
-            #     'recipe',
-            #     flat=True
-            # )
-            # for tag in tags:
-            #     tag_recipes_id = tag.tag_recipes.all().values_list(
-            #         'recipe',
-            #         flat=True
-            #     )
-            #     tag_recipe_queryset_id = (
-            #         tag_recipe_queryset_id.intersection(tag_recipes_id)
-            #     )
-
-            tag_recipe_queryset_id = RecipeTag.objects.filter(
-                tag__in=tags
-            ).values_list(
-                'recipe',
-                flat=True
-            )
-            queryset = queryset.filter(id__in=tag_recipe_queryset_id)
+            if is_favorited == '1':
+                queryset = queryset.filter(id__in=in_favorite)
+            if is_in_shopping_cart == '1':
+                queryset = queryset.filter(id__in=in_shopping_cart)
         return queryset
 
     def get_serializer_class(self):

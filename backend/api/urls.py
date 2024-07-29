@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework import routers
 
 from api.views import (
-    CustomTokenCreateView,
+    # CustomTokenCreateView,
     CustomUserViewSet,
     IngredientViewSet,
     RecipeViewSet,
@@ -19,6 +19,6 @@ router_v1.register('recipes', RecipeViewSet, basename='recipes')
 
 urlpatterns = [
     path('', include(router_v1.urls)),
-    path('auth/token/login/', CustomTokenCreateView.as_view()),
+    # path('auth/token/login/', CustomTokenCreateView.as_view()),
     path('auth/', include('djoser.urls.authtoken')),
 ]
