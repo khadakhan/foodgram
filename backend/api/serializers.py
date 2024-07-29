@@ -193,11 +193,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         return False
 
     def get_is_in_shopping_cart(self, obj):
-        if obj.id in ShopList.objects.all().values_list(
-            'recipe',
-            flat=True
-        ):
-            return True
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.id in user.what_by_user.all().values_list(
+                'recipe',
+                flat=True
+            ):
+                return True
+            else:
+                return False
         return False
 
 
