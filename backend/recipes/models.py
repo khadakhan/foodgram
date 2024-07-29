@@ -1,12 +1,14 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from backend.settings import (
+    TITLE_LENGTH,
+    TAG_LENGTH,
+    MEASUREMENT_UNIT_LENGTH,
+    INGREDIENT_NAME_LENGTH
+)
 from recipes.validators import not_zero_validator
 
-TITLE_LENGTH = 200
-TAG_LENGTH = 32
-MEASUREMENT_UNIT_LENGTH = 64
-INGREDIENT_NAME_LENGTH = 128
 
 User = get_user_model()
 

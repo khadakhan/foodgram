@@ -4,18 +4,15 @@ from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 
+from backend.settings import SUBSCRIPTION_AMOUNT_RECIPE
 from recipes.models import (
-    # Favorite,
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
-    # ShopList,
     Tag
 )
 
 User = get_user_model()
-
-SUBSCRIPTION_AMOUNT_RECIPE = 10
 
 # =============================Users=======================================
 
@@ -208,13 +205,6 @@ class RecipeSerializer(serializers.ModelSerializer):
 class IdAmountSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
-
-    def validate_id(self, value):
-        if value < 1:
-            serializers.ValidationError(
-                'Количество ингеридента должно быть положительное целое число'
-            )
-        return value
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):

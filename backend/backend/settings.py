@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv(
 if os.getenv('LOCAL_DEBUG', default=False):
     DEBUG = True
 else:
-    DEBUG = True
+    DEBUG = False
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS',
@@ -181,5 +181,14 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
 }
-
+# Ограничение на загрузку данных в базу
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000
+
+# ----------------константы--------------------
+SUBSCRIPTION_AMOUNT_RECIPE = 10
+DOMAIN = 'foodgramdo.zapto.org'
+MAX_EMAIL_LENGTH = 254
+TITLE_LENGTH = 200
+TAG_LENGTH = 32
+MEASUREMENT_UNIT_LENGTH = 64
+INGREDIENT_NAME_LENGTH = 128

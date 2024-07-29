@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-MAX_EMAIL_LENGTH = 254
+from backend.settings import MAX_EMAIL_LENGTH
 
 
 class CustomUser(AbstractUser):

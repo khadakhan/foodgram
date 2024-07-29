@@ -27,6 +27,8 @@ from api.serializers import (
     UserAvatarSerializer,
     UserListRetrieveSerializer,
 )
+
+from backend.settings import DOMAIN
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -37,8 +39,6 @@ from recipes.models import (
     Tag
 )
 from users.models import Subscription
-
-DOMAIN = 'foodgramdo.zapto.org'
 
 # ==========================Users==============================================
 
