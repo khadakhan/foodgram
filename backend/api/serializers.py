@@ -181,12 +181,17 @@ class RecipeSerializer(serializers.ModelSerializer):
         ).data
 
     def get_is_favorited(self, obj):
-        if obj.id in Favorite.objects.all().values_list(
-            'recipe',
-            flat=True
-        ):
-            return True
+        user = self.context['request'].user
+        if user.is_authenticated:
+            if obj.id in user.recipes_in_favorites.all().values_list(
+                'recipe',
+                flat=True
+            ):
+                return True
+            else:
+                return False
         return False
+
 
     def get_is_in_shopping_cart(self, obj):
         if obj.id in ShopList.objects.all().values_list(

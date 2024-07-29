@@ -228,7 +228,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 'recipe',
                 flat=True
             )
-
             queryset = queryset.filter(id__in=tag_recipe_queryset_id)
         return queryset
 
