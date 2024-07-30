@@ -28,10 +28,11 @@ SECRET_KEY = os.getenv(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if os.getenv('LOCAL_DEBUG', default=False):
-    DEBUG = True
-else:
+LOCAL_DEBUG = os.getenv('LOCAL_DEBUG', default='postgresql')
+if LOCAL_DEBUG == 'postgresql':
     DEBUG = False
+else:
+    DEBUG = True
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS',
@@ -97,14 +98,8 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
-if os.getenv('LOCAL_DEBUG', default=False):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
+
+if LOCAL_DEBUG == 'postgresql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -115,6 +110,14 @@ else:
             'PORT': os.getenv('DB_PORT', 5432)
         }
     }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
