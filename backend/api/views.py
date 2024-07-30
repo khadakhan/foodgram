@@ -20,7 +20,6 @@ from api.serializers import (
     IngredientSerializer,
     RecipeSerializer,
     RecipeCreateSerializer,
-    RecipeUpdateSerializer,
     ShortLinkSerializer,
     SubscriptionSerializer,
     TagSerializer,
@@ -210,10 +209,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        if self.action == 'create':
+        if self.action == 'create' or self.action == 'partial_update':
             return RecipeCreateSerializer
-        if self.action == 'partial_update':
-            return RecipeUpdateSerializer
         if self.action == 'get_short_link':
             return ShortLinkSerializer
         if self.action == 'add_delete_favorite':
@@ -221,81 +218,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if self.action == 'add_delete_shopping_cart':
             return FavoriteSerializer
         return RecipeSerializer
-
-    def create_new_ingredients(self, id_amount, recipe):
-        for item in id_amount:
-            current_ingredient = get_object_or_404(Ingredient, pk=item['id'])
-            RecipeIngredientsAmount.objects.create(
-                recipe=recipe,
-                ingredient=current_ingredient,
-                amount=item['amount']
-            )
-        return True
-
-    def create_new_tags(self, tags, recipe):
-        for tag_id in tags:
-            current_tag = get_object_or_404(Tag, pk=tag_id)
-            RecipeTag.objects.create(
-                recipe=recipe,
-                tag=current_tag,
-            )
-        return True
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = dict(serializer.validated_data)
-        id_amount = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
-        user = request.user
-        recipe = Recipe.objects.create(**validated_data, author=user)
-        if (
-            not self.create_new_ingredients(id_amount, recipe)
-            or not self.create_new_tags(tags, recipe)
-        ):
-            return Response(
-                data={'error_message': 'проверьте ингредиенты или теги'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        instance_serializer = RecipeSerializer(
-            recipe,
-            context={'request': request}
-        )
-        return Response(
-            instance_serializer.data,
-            status=status.HTTP_201_CREATED
-        )
-
-    def partial_update(self, request, pk):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated_data = dict(serializer.validated_data)
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if recipe.author != request.user:
-            return Response(status=status.HTTP_403_FORBIDDEN)
-        if 'image' in validated_data:
-            recipe.image = validated_data['image']
-        recipe.cooking_time = validated_data['cooking_time']
-        recipe.text = validated_data['text']
-        recipe.name = validated_data['name']
-        recipe.save()
-        id_amount = validated_data['ingredients']
-        tags = validated_data['tags']
-        recipe.recipe_tags.all().delete()
-        recipe.ingredient_amount.all().delete()
-        if (
-            not self.create_new_ingredients(id_amount, recipe)
-            or not self.create_new_tags(tags, recipe)
-        ):
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        instance_serializer = RecipeSerializer(
-            recipe,
-            context={'request': request}
-        )
-        return Response(
-            instance_serializer.data
-        )
 
     @action(
         methods=['get'],
@@ -315,6 +237,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.action == 'destroy':
+            return (IsAuthor(),)
+        if self.action == 'partial_update':
             return (IsAuthor(),)
         if self.action == 'download_shopping_cart':
             return (IsAuthenticated(),)

@@ -2,6 +2,7 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from backend.settings import SUBSCRIPTION_AMOUNT_RECIPE
@@ -9,6 +10,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
+    RecipeTag,
     Tag
 )
 
@@ -224,11 +226,72 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
+# ---------------новый код-------------------
+
+    def create_new_ingredients(self, id_amount, recipe):
+        for item in id_amount:
+            current_ingredient = get_object_or_404(Ingredient, pk=item['id'])
+            RecipeIngredientsAmount.objects.create(
+                recipe=recipe,
+                ingredient=current_ingredient,
+                amount=item['amount']
+            )
+
+    def create_new_tags(self, tags, recipe):
+        for tag_id in tags:
+            current_tag = get_object_or_404(Tag, pk=tag_id)
+            RecipeTag.objects.create(
+                recipe=recipe,
+                tag=current_tag,
+            )
+
+    def create(self, validated_data):
+        id_amount = validated_data.pop('ingredients')
+        tags = validated_data.pop('tags')
+        user = self.context['request'].user
+        recipe = Recipe.objects.create(**validated_data, author=user)
+        self.create_new_ingredients(id_amount, recipe)
+        self.create_new_tags(tags, recipe)
+        return recipe
+
+    def update(self, instance, validated_data):
+        if 'image' in validated_data:
+            instance.image = validated_data['image']
+        instance.cooking_time = validated_data['cooking_time']
+        instance.text = validated_data['text']
+        instance.name = validated_data['name']
+        instance.save()
+        id_amount = validated_data['ingredients']
+        tags = validated_data['tags']
+        instance.recipe_tags.all().delete()
+        instance.ingredient_amount.all().delete()
+        self.create_new_ingredients(id_amount, instance)
+        self.create_new_tags(tags, instance)
+        return instance
+
+    def to_representation(self, instance):
+        instance_serializer = RecipeSerializer(
+            instance=instance,
+            context={'request': self.context['request']}
+        )
+        return instance_serializer.data
+
+    def validate(self, data):
+        if 'ingredients' not in data:
+            raise serializers.ValidationError(
+                'Укажите ингредиенты!'
+            )
+        if 'tags' not in data:
+            raise serializers.ValidationError(
+                'Укажите теги!'
+            )
+        return data
+# ----------------------конец новый код ---------------------------
+
     def validate_ingredients(self, value):
         if not value:
             raise serializers.ValidationError('Заполните ингредиенты.')
         id_list = [item['id'] for item in value]
-
         for id in id_list:
             if id_list.count(id) > 1:
                 raise serializers.ValidationError(
@@ -264,10 +327,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                     'Такого тега нет.'
                 )
         return value
-
-
-class RecipeUpdateSerializer(RecipeCreateSerializer):
-    image = Base64ImageField(required=False, allow_null=True)
 
 
 class ShortLinkSerializer(serializers.ModelSerializer):
