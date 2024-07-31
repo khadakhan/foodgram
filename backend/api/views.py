@@ -3,12 +3,14 @@ import short_url
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.conf import settings
 from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from api.filters import RecipeFilter
 from api.pagination import UsersPagination
 from api.permissions import (
     AllowAny,
@@ -33,7 +35,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
-    RecipeTag,
     ShopList,
     Tag
 )
@@ -159,7 +160,10 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    # queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
+    # filter_backends = [filters.SearchFilter]
+    # search_fields = ['^name']
 
     def get_queryset(self):
         queryset = Ingredient.objects.all()
@@ -170,43 +174,11 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    queryset = Recipe.objects.all()
     pagination_class = UsersPagination
     serializer_class = RecipeSerializer
-
-    def get_queryset(self):
-        user = self.request.user
-        queryset = Recipe.objects.all()
-        author_id = self.request.query_params.get('author')
-        is_favorited = self.request.query_params.get('is_favorited')
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart'
-        )
-        tag_slugs = self.request.query_params.getlist('tags')
-        if author_id is not None and author_id.isdigit():
-            queryset = queryset.filter(author=author_id)
-        if tag_slugs:
-            tags = Tag.objects.filter(slug__in=tag_slugs).all()
-            tag_recipe_queryset_id = RecipeTag.objects.filter(
-                tag__in=tags
-            ).values_list(
-                'recipe',
-                flat=True
-            )
-            queryset = queryset.filter(id__in=tag_recipe_queryset_id)
-        if user.is_authenticated:
-            in_favorite = user.recipes_in_favorites.all().values_list(
-                'recipe',
-                flat=True
-            )
-            in_shopping_cart = user.what_by_user.all().values_list(
-                'recipe',
-                flat=True
-            )
-            if is_favorited == '1':
-                queryset = queryset.filter(id__in=in_favorite)
-            if is_in_shopping_cart == '1':
-                queryset = queryset.filter(id__in=in_shopping_cart)
-        return queryset
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def get_serializer_class(self):
         if self.action == 'create' or self.action == 'partial_update':
