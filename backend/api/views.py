@@ -9,13 +9,14 @@ from djoser.views import UserViewSet
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from api.filters import RecipeFilter
-from api.pagination import UsersPagination
+from api.pagination import UsersRecipesPagination
 from api.permissions import (
-    AllowAny,
+    # AllowAny,
     IsAuthor,
-    IsAuthenticated,
+    # IsAuthenticated,
 )
 from api.serializers import (
     FavoriteSerializer,
@@ -47,7 +48,7 @@ User = get_user_model()
 
 class CustomUserViewSet(UserViewSet):
     """Redefinition UserViewSet."""
-    pagination_class = UsersPagination
+    pagination_class = UsersRecipesPagination
 
     def get_queryset(self):
         user = self.request.user
@@ -175,7 +176,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    pagination_class = UsersPagination
+    pagination_class = UsersRecipesPagination
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter

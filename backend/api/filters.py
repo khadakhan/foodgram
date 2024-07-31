@@ -22,7 +22,7 @@ class RecipeFilter(filters.FilterSet):
         choices=IS_IN,
         method='filter_is_in'
     )
-    is_in_favorite = filters.ChoiceFilter(
+    is_favorited = filters.ChoiceFilter(
         choices=IS_IN,
         method='filter_is_in'
     )
@@ -35,7 +35,7 @@ class RecipeFilter(filters.FilterSet):
                     'recipe',
                     flat=True
                 )
-            if name == 'is_in_favorite':
+            if name == 'is_favorited':
                 in_list = user.recipes_in_favorites.all().values_list(
                     'recipe',
                     flat=True

@@ -7,13 +7,13 @@ class IsAuthor(BasePermission):
         return (obj.author == request.user)
 
 
-class IsAuthenticated(BasePermission):
+# class IsAuthenticated(BasePermission):
 
-    def has_permission(self, request, view):
-        return request.user.is_authenticated
+#     def has_permission(self, request, view):
+#         return request.user.is_authenticated
 
 
-class AllowAny(BasePermission):
+# class AllowAny(BasePermission):
 
-    def has_permission(self, request, view):
-        return True
+#     def has_permission(self, request, view):
+#         return True
