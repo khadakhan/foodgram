@@ -141,6 +141,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+    'SEARCH_PARAM': 'name',
 }
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000
 

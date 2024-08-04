@@ -1,3 +1,4 @@
+import short_url
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
@@ -6,12 +7,14 @@ from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from backend.settings import SUBSCRIPTION_AMOUNT_RECIPE
+from backend.settings import DOMAIN, SUBSCRIPTION_AMOUNT_RECIPE
 from recipes.models import (
+    Favorite,
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
     RecipeTag,
+    ShopList,
     Tag
 )
 
@@ -73,8 +76,6 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
         recipes_list = obj.recipes.all()[:recipes_limit]
         return RecipesInSubscriptionSerializer(recipes_list, many=True).data
 
-##################################################################
-
 
 class SubscriptionCreateSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
@@ -86,7 +87,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
             'subscription',
             flat=True
         )
-        # если пытается подписаться на себя или подписка уже есть
         if (
             user.id == subscription.id
             or subscription.id in user_subscriptions_id
@@ -108,8 +108,6 @@ class SubscriptionCreateSerializer(serializers.Serializer):
             subscription,
             context=self.context
         ).data
-
-#########################################################################
 
 # ======================Recipes=======================================
 
@@ -212,6 +210,12 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
         author = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data, author=author)
+        short_link = 'https://{domain}/{link_id}'.format(
+            domain=DOMAIN,
+            link_id=short_url.encode_url(recipe.id, min_length=10)
+        )
+        recipe.short_link = short_link
+        recipe.save()
         self.create_new_ingredients(id_amount, recipe)
         self.create_new_tags(tags, recipe)
         return recipe
@@ -286,7 +290,7 @@ class ShortLinkSerializer(serializers.ModelSerializer):
         }
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class FavoriteShopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
@@ -295,3 +299,29 @@ class FavoriteSerializer(serializers.ModelSerializer):
             'image',
             'cooking_time'
         )
+
+
+class FavoriteCreateSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        if Favorite.objects.filter(
+            user=self.context['request'].user, recipe=data['id']
+        ).exists():
+            raise serializers.ValidationError(
+                {'favorite error': 'Рецепт уже добавлен'}
+            )
+        return data
+
+
+class ShopCreateSerializer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+
+    def validate(self, data):
+        if ShopList.objects.filter(
+            user=self.context['request'].user, recipe=data['id']
+        ).exists():
+            raise serializers.ValidationError(
+                {'shop_cart error': 'Рецепт уже добавлен'}
+            )
+        return data
