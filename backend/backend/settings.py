@@ -11,8 +11,8 @@ SECRET_KEY = os.getenv(
     default='django-insecure-wd8h0agh$v#^f$kn-e0h5$7=_$fe^@&%mt6r$)w)=26yq&kg9!'
 )
 
-LOCAL_DEBUG = os.getenv('LOCAL_DEBUG', default='postgresql')
-if LOCAL_DEBUG == 'postgresql':
+LOCAL_DEBUG = os.getenv('LOCAL_DEBUG', default='off')
+if LOCAL_DEBUG == 'off':
     DEBUG = False
 else:
     DEBUG = True
@@ -75,7 +75,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
-if LOCAL_DEBUG == 'postgresql':
+DATA_BASE = os.getenv('DATA_BASE', default='postgresql')
+if DATA_BASE == 'postgresql':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -111,7 +112,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'W-SU'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

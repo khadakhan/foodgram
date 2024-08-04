@@ -301,27 +301,46 @@ class FavoriteShopSerializer(serializers.ModelSerializer):
         )
 
 
-class FavoriteCreateSerializer(serializers.Serializer):
+class FavoriteShopCreateSerializer(serializers.Serializer):
     id = serializers.IntegerField(required=False)
 
     def validate(self, data):
-        if Favorite.objects.filter(
-            user=self.context['request'].user, recipe=data['id']
-        ).exists():
+        if (
+            self.context['action'] == 'add_favorite'
+            and Favorite.objects.filter(
+                user=self.context['request'].user, recipe=data['id']
+            ).exists()
+        ):
             raise serializers.ValidationError(
-                {'favorite error': 'Рецепт уже добавлен'}
+                {'favorite error': 'Рецепт уже добавлен в избранное'}
             )
-        return data
-
-
-class ShopCreateSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
-
-    def validate(self, data):
-        if ShopList.objects.filter(
-            user=self.context['request'].user, recipe=data['id']
-        ).exists():
+        if (
+            self.context['action'] == 'delete_favorite'
+            and not Favorite.objects.filter(
+                user=self.context['request'].user, recipe=data['id']
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                {'favorite error': 'Удаление невозможно. '
+                 'Рецепта нет в избранном'}
+            )
+        if (
+            self.context['action'] == 'add_shop'
+            and ShopList.objects.filter(
+                user=self.context['request'].user, recipe=data['id']
+            ).exists()
+        ):
             raise serializers.ValidationError(
                 {'shop_cart error': 'Рецепт уже добавлен'}
+            )
+        if (
+            self.context['action'] == 'delete_shop'
+            and not ShopList.objects.filter(
+                user=self.context['request'].user, recipe=data['id']
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                {'shopping_cart error': 'Удаление невозможно. '
+                 'Рецепта нет в корзине покупок'}
             )
         return data
