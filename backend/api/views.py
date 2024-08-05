@@ -301,29 +301,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
     )
     def download_shopping_cart(self, request):
         user = request.user
-        user_recipes_in_shopping_cart = list(
-            user.what_by_user.all().values_list(
-                'recipe',
-                flat=True
-            )
-        )
-        recipe_ingredient_amount = []
-        for recipe_id in user_recipes_in_shopping_cart:
-            recipe_ingredient_amount += list(
-                RecipeIngredientsAmount.objects.filter(
-                    recipe=recipe_id
-                )
-            )
-        shop_list = []
-        for item in recipe_ingredient_amount:
-            shop_list.append(
-                [
-                    item.ingredient.name,
-                    item.amount,
-                    item.ingredient.measurement_unit
-                ]
-            )
-        df = pd.DataFrame(shop_list, columns=['ingredient', 'amount', 'unit'])
+        shop_ingredients = RecipeIngredientsAmount.objects.filter(
+            recipe__who_by_this__user=user
+        ).values('ingredient', 'amount').order_by('ingredient')
+        shop_list = [
+            [
+                Ingredient.objects.filter(
+                    pk=item['ingredient']
+                ).values('name', 'measurement_unit')[0]['name'],
+                Ingredient.objects.filter(
+                    pk=item['ingredient']
+                ).values('name', 'measurement_unit')[0]['measurement_unit'],
+                item['amount'],
+            ]
+            for item in shop_ingredients
+        ]
+        df = pd.DataFrame(shop_list, columns=['ingredient', 'unit', 'amount'])
         df_grouped = df.groupby(['ingredient', 'unit']).amount.sum()
         df_grouped.to_csv('recipes/shop_list/shop_list.txt')
         response = FileResponse(
