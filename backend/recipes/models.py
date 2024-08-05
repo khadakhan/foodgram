@@ -8,7 +8,6 @@ from recipes.const import (
     INGREDIENT_NAME_LENGTH
 )
 from users.models import CustomUser as User
-# from recipes.validators import not_zero_validator
 
 
 class Ingredient(models.Model):
@@ -41,8 +40,6 @@ class Tag(models.Model):
     )
     slug = models.SlugField(
         unique=True,
-        # null=True,
-        # blank=True,
         max_length=TAG_LENGTH
     )
 
