@@ -22,8 +22,11 @@ class ShopListInline(admin.TabularInline):
 
 
 class FoodUserAdmin(UserAdmin):
+    readonly_fields = ('how_many_subscriptions', 'how_many_recipes')
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
+        (None, {'fields': (
+            'email', 'password', 'how_many_subscriptions', 'how_many_recipes'
+        )}),
         ('Персональные данные',
             {'fields':
              ('username',
@@ -53,13 +56,22 @@ class FoodUserAdmin(UserAdmin):
         'first_name',
         'last_name',
         'is_staff',
-        'is_active')
+        'is_active',
+        'how_many_subscriptions',
+        'how_many_recipes'
+    )
     search_fields = ('email', 'username')
     ordering = ('email',)
     inlines = (
         SubscriptionInline,
         ShopListInline,
     )
+
+    def how_many_subscriptions(self, obj):
+        return obj.subscriptions.count()
+
+    def how_many_recipes(self, obj):
+        return obj.recipes.count()
 
 
 class SubscriptionAdmin(admin.ModelAdmin):

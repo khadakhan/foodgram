@@ -1,5 +1,5 @@
-from django.contrib.auth import get_user_model
 from django.db import models
+from django.core.validators import MinValueValidator
 
 from recipes.const import (
     TITLE_LENGTH,
@@ -7,10 +7,8 @@ from recipes.const import (
     MEASUREMENT_UNIT_LENGTH,
     INGREDIENT_NAME_LENGTH
 )
-from recipes.validators import not_zero_validator
-
-
-User = get_user_model()
+from users.models import CustomUser as User
+# from recipes.validators import not_zero_validator
 
 
 class Ingredient(models.Model):
@@ -43,9 +41,10 @@ class Tag(models.Model):
     )
     slug = models.SlugField(
         unique=True,
-        null=True,
-        blank=True,
-        max_length=TAG_LENGTH)
+        # null=True,
+        # blank=True,
+        max_length=TAG_LENGTH
+    )
 
     class Meta:
         verbose_name = 'тег'
@@ -77,7 +76,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления в минутах',
-        validators=(not_zero_validator,),
+        validators=(MinValueValidator(1),),
     )
     created_at = models.DateTimeField(
         verbose_name='Дата публикации',
@@ -103,7 +102,7 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('created_at',)
+        ordering = ('-created_at',)
 
     def __str__(self):
         return self.name
@@ -142,25 +141,22 @@ class RecipeIngredientsAmount(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        validators=(not_zero_validator,),
+        validators=(MinValueValidator(1),),
     )
 
     class Meta:
-        verbose_name = 'спецификация'
-        verbose_name_plural = 'Спецификации'
-        constraints = [
+        verbose_name = 'Кол-во ингредиента в рецепте'
+        verbose_name_plural = 'Кол-во ингредиента в рецепте'
+        constraints = (
             models.UniqueConstraint(
                 fields=['ingredient', 'recipe'],
                 name='unique_ingredient_recipe'
-            )
-        ]
-
-    @property
-    def measurement_unit(self):
-        return self.ingredient.measurement_unit
+            ),
+        )
 
     def __str__(self):
-        return self.ingredient.measurement_unit
+        return (f'Ингредиент{self.ingredient.name} {self.amount}'
+                f' {self.ingredient.measurement_unit}')
 
 
 class Favorite(models.Model):

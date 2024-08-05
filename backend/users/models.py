@@ -7,6 +7,10 @@ from users.const import MAX_EMAIL_LENGTH, MAX_LENGHT_CHAR
 
 class CustomUser(AbstractUser):
     """Redefined user model."""
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
     email = models.EmailField(
         max_length=MAX_EMAIL_LENGTH,
         unique=True,
@@ -27,9 +31,6 @@ class CustomUser(AbstractUser):
         verbose_name='Аватар',
     )
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
-
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
@@ -40,14 +41,11 @@ class CustomUser(AbstractUser):
 
 class Subscription(models.Model):
     """Model for following."""
+
     user = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name='subscriptions')
     subscription = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name='subscribers')
-
-    def clean(self):
-        if self.user == self.subscription:
-            raise ValidationError('Нельзя подписаться на себя')
 
     class Meta:
         verbose_name = 'подписка'
@@ -59,5 +57,10 @@ class Subscription(models.Model):
             )
         ]
 
+    def clean(self):
+        if self.user == self.subscription:
+            raise ValidationError('Нельзя подписаться на себя')
+
     def __str__(self):
-        return self.user.username
+        return (f'{self.user.username} subscribed'
+                ' on {self.subscription.username}')
