@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from backend.settings import MAX_EMAIL_LENGTH
+from users.const import MAX_EMAIL_LENGTH, MAX_LENGHT_CHAR
 
 
 class CustomUser(AbstractUser):
@@ -13,11 +13,11 @@ class CustomUser(AbstractUser):
         verbose_name='email'
     )
     first_name = models.CharField(
-        max_length=150,
+        max_length=MAX_LENGHT_CHAR,
         verbose_name='Имя'
     )
     last_name = models.CharField(
-        max_length=150,
+        max_length=MAX_LENGHT_CHAR,
         verbose_name='Фамиля'
     )
     avatar = models.ImageField(

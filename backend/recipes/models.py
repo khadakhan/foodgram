@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from backend.settings import (
+from recipes.const import (
     TITLE_LENGTH,
     TAG_LENGTH,
     MEASUREMENT_UNIT_LENGTH,

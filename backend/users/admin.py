@@ -7,6 +7,7 @@ from users.models import CustomUser, Subscription
 
 class SubscriptionInline(admin.TabularInline):
     """Inline for users administration."""
+
     model = Subscription
     fk_name = "user"
     extra = 0
@@ -14,13 +15,13 @@ class SubscriptionInline(admin.TabularInline):
 
 class ShopListInline(admin.TabularInline):
     """Inline for users administration."""
+
     model = ShopList
     fk_name = "user"
     extra = 0
 
 
-class CustomUserAdmin(UserAdmin):
-    """Users """
+class FoodUserAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Персональные данные',
@@ -55,10 +56,10 @@ class CustomUserAdmin(UserAdmin):
         'is_active')
     search_fields = ('email', 'username')
     ordering = ('email',)
-    inlines = [
+    inlines = (
         SubscriptionInline,
         ShopListInline,
-    ]
+    )
 
 
 class SubscriptionAdmin(admin.ModelAdmin):
@@ -72,5 +73,5 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_display_links = ('user',)
 
 
-admin.site.register(CustomUser, CustomUserAdmin)
+admin.site.register(CustomUser, FoodUserAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)
