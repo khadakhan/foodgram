@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from recipes.models import ShopList
-from users.models import CustomUser, Subscription
+from users.models import FoodUser, Subscription
 
 
 class SubscriptionInline(admin.TabularInline):
@@ -77,13 +77,13 @@ class FoodUserAdmin(UserAdmin):
 class SubscriptionAdmin(admin.ModelAdmin):
     list_display = (
         'user',
-        'subscription',
+        'author',
     )
-    list_editable = ('subscription',)
+    list_editable = ('author',)
     search_fields = ('user',)
     list_filter = ('user',)
     list_display_links = ('user',)
 
 
-admin.site.register(CustomUser, FoodUserAdmin)
+admin.site.register(FoodUser, FoodUserAdmin)
 admin.site.register(Subscription, SubscriptionAdmin)

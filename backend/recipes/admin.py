@@ -52,7 +52,7 @@ class RecipeAdmin(admin.ModelAdmin):
     )
 
     def how_many_add_in_favorite(self, obj):
-        return obj.who_add_in_favorites.count()
+        return obj.favorite_set.count()
 
 
 class IngredientAdmin(admin.ModelAdmin):

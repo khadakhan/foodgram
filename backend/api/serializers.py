@@ -43,7 +43,7 @@ class UserListRetrieveSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context['request']
-        return request.user.id in obj.subscribers.all().values_list(
+        return request.user.id in obj.author_subscriptions.all().values_list(
             'user',
             flat=True
         )
@@ -82,14 +82,14 @@ class SubscriptionCreateSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = self.context['request'].user
-        subscription = get_object_or_404(User, pk=data['id'])
-        user_subscriptions_id = user.subscriptions.values_list(
-            'subscription',
+        author = get_object_or_404(User, pk=data['id'])
+        user_subscriptions_id = user.user_subscriptions.values_list(
+            'author',
             flat=True
         )
         if (
-            user.id == subscription.id
-            or subscription.id in user_subscriptions_id
+            user.id == author.id
+            or author.id in user_subscriptions_id
         ):
             raise serializers.ValidationError(
                 {'subscription error': 'Нельзя подписаться на себя'

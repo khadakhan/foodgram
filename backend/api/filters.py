@@ -31,12 +31,12 @@ class RecipeFilter(filters.FilterSet):
         user = self.request.user
         if user.is_authenticated and value == '1':
             if name == 'is_in_shopping_cart':
-                in_list = user.what_by_user.all().values_list(
+                in_list = user.recipe_add_shoplist.all().values_list(
                     'recipe',
                     flat=True
                 )
             if name == 'is_favorited':
-                in_list = user.recipes_in_favorites.all().values_list(
+                in_list = user.favorite_set.all().values_list(
                     'recipe',
                     flat=True
                 )

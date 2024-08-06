@@ -5,11 +5,11 @@ from django.db import models
 from users.const import MAX_EMAIL_LENGTH, MAX_LENGHT_CHAR
 
 
-class CustomUser(AbstractUser):
+class FoodUser(AbstractUser):
     """Redefined user model."""
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ('username', 'first_name', 'last_name')
 
     email = models.EmailField(
         max_length=MAX_EMAIL_LENGTH,
@@ -43,17 +43,21 @@ class Subscription(models.Model):
     """Model for following."""
 
     user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='subscriptions')
-    subscription = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name='subscribers')
+        FoodUser, on_delete=models.CASCADE,
+        related_name='user_subscriptions'
+    )
+    author = models.ForeignKey(
+        FoodUser, on_delete=models.CASCADE,
+        related_name='author_subscriptions'
+    )
 
     class Meta:
         verbose_name = 'подписка'
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'subscription'],
-                name='unique_user_subscription'
+                fields=('user', 'author'),
+                name='unique_user_author'
             )
         ]
 
@@ -63,4 +67,4 @@ class Subscription(models.Model):
 
     def __str__(self):
         return (f'{self.user.username} subscribed'
-                ' on {self.subscription.username}')
+                f' on {self.subscription.username}')

@@ -101,8 +101,8 @@ class FoodUserViewSet(UserViewSet):
     def subscriptions(self, request):
         user = request.user
         queryset = User.objects.filter(
-            id__in=user.subscriptions.values_list(
-                'subscription',
+            id__in=user.user_subscriptions.values_list(
+                'author',
                 flat=True
             )
         ).annotate(
@@ -133,14 +133,14 @@ class FoodUserViewSet(UserViewSet):
         url_path=r'(?P<id>\d+)/subscribe'
     )
     def create_subscription(self, request, id):
-        subscription = get_object_or_404(User, pk=id)
+        author = get_object_or_404(User, pk=id)
         user = request.user
         serializer = SubscriptionCreateSerializer(
             data={'id': id},
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        Subscription.objects.create(user=user, subscription=subscription)
+        Subscription.objects.create(user=user, author=author)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @create_subscription.mapping.delete
@@ -148,14 +148,14 @@ class FoodUserViewSet(UserViewSet):
         if not User.objects.filter(pk=id).exists():
             return Response(status=status.HTTP_404_NOT_FOUND)
         user = request.user
-        user_subscriptions = user.subscriptions
+        user_subscriptions = user.user_subscriptions
         user_subscriptions_id = user_subscriptions.values_list(
-            'subscription',
+            'author',
             flat=True
         )
         if int(id) not in user_subscriptions_id:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        user_subscriptions.filter(subscription=id).delete()
+        user_subscriptions.filter(author=id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 # =============================Recipes=======================================
@@ -183,10 +183,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            is_favorited = user.recipes_in_favorites.filter(
+            is_favorited = user.favorite_set.filter(
                 recipe=OuterRef('pk')
             )
-            is_in_shopping_cart = user.what_by_user.filter(
+            is_in_shopping_cart = user.recipe_add_shoplist.filter(
                 recipe=OuterRef('pk')
             )
             return Recipe.objects.annotate(
@@ -302,7 +302,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shop_ingredients = RecipeIngredientsAmount.objects.filter(
-            recipe__who_by_this__user=user
+            recipe__user_add_shoplist__user=user
         ).values('ingredient', 'amount').order_by('ingredient')
         shop_list = [
             [
