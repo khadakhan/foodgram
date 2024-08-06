@@ -5,18 +5,14 @@ from recipes.models import (
     Tag
 )
 
-TAGS = [(tag.slug, tag.id) for tag in Tag.objects.all()]
 IS_IN = [(0, 'не добавлен'), (1, 'добавлен')]
 
 
 class RecipeFilter(filters.FilterSet):
-    author = filters.CharFilter(
-        field_name='author',
-    )
-    tags = filters.MultipleChoiceFilter(
+    tags = filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
-        distinct=True,
-        choices=TAGS
+        to_field_name='slug',
+        queryset=Tag.objects.all()
     )
     is_in_shopping_cart = filters.ChoiceFilter(
         choices=IS_IN,
@@ -26,6 +22,13 @@ class RecipeFilter(filters.FilterSet):
         choices=IS_IN,
         method='filter_is_in'
     )
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'author',
+            'tags'
+        )
 
     def filter_is_in(self, queryset, name, value):
         user = self.request.user
@@ -42,9 +45,3 @@ class RecipeFilter(filters.FilterSet):
                 )
             queryset = queryset.filter(id__in=in_list)
         return queryset
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'author',
-        )
