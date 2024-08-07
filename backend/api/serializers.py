@@ -13,7 +13,6 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
-    RecipeTag,
     Shop,
     Tag
 )
@@ -196,15 +195,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ]
         RecipeIngredientsAmount.objects.bulk_create(objs)
 
-    @staticmethod
-    def create_new_tags(tags, recipe):
-        for tag_id in tags:
-            current_tag = get_object_or_404(Tag, pk=tag_id)
-            RecipeTag.objects.create(
-                recipe=recipe,
-                tag=current_tag,
-            )
-
     def create(self, validated_data):
         id_amount = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
@@ -217,18 +207,21 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         recipe.short_link = short_link
         recipe.save()
         self.create_new_ingredients(id_amount, recipe)
-        self.create_new_tags(tags, recipe)
+        recipe.tags.set(
+            Tag.objects.filter(id__in=tags)
+        )
         return recipe
 
     def update(self, instance, validated_data):
         id_amount = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-        super().update(instance=instance, validated_data=validated_data)
-        instance.recipe_tags.all().delete()
+        instance.tags.remove()
         instance.ingredient_amount.all().delete()
         self.create_new_ingredients(id_amount, instance)
-        self.create_new_tags(tags, instance)
-        return instance
+        instance.tags.set(
+            Tag.objects.filter(id__in=tags)
+        )
+        return super().update(instance=instance, validated_data=validated_data)
 
     def to_representation(self, instance):
         return RecipeSerializer(

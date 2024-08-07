@@ -100,9 +100,6 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         Tag,
-        # не удаляю промежточную сущность, так как явно использую её в admin,
-        # serializers
-        through='RecipeTag',
         verbose_name='Теги',
     )
     short_link = models.URLField(null=True, blank=True)
@@ -114,26 +111,6 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
-
-# не удаляю промежточную сущность, так как явно использую её в admin,
-# serializers
-
-
-class RecipeTag(models.Model):
-    """Bridge model for tag and recipe."""
-
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='recipe_tags',
-        verbose_name='Рецепт',
-    )
-    tag = models.ForeignKey(
-        Tag,
-        on_delete=models.CASCADE,
-        related_name='tag_recipes',
-        verbose_name='Тег',
-    )
 
 
 class RecipeIngredientsAmount(models.Model):
