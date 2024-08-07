@@ -5,7 +5,7 @@ from recipes.models import (
     Favorite,
     Recipe,
     RecipeIngredientsAmount,
-    ShopList,
+    Shop,
     Tag
 )
 
@@ -21,8 +21,8 @@ class FavoriteInline(admin.TabularInline):
     extra = 0
 
 
-class ShopListInline(admin.TabularInline):
-    model = ShopList
+class ShopInline(admin.TabularInline):
+    model = Shop
     extra = 0
 
 
@@ -40,7 +40,7 @@ class RecipeAdmin(admin.ModelAdmin):
     inlines = (
         RecipeIngredientsAmountInline,
         FavoriteInline,
-        ShopListInline,
+        ShopInline,
     )
 
     def how_many_add_in_favorite(self, obj):
@@ -79,7 +79,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     list_display_links = ('user',)
 
 
-class ShopListAdmin(admin.ModelAdmin):
+class ShopAdmin(admin.ModelAdmin):
     list_display = (
         'user',
         'recipe',
@@ -92,5 +92,5 @@ class ShopListAdmin(admin.ModelAdmin):
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Recipe, RecipeAdmin)
-admin.site.register(ShopList, ShopListAdmin)
+admin.site.register(Shop, ShopAdmin)
 admin.site.register(Tag, TagAdmin)

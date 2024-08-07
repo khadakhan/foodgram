@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from recipes.models import ShopList
+from recipes.models import Shop
 from users.models import FoodUser, Subscription
 
 
@@ -13,10 +13,10 @@ class SubscriptionInline(admin.TabularInline):
     extra = 0
 
 
-class ShopListInline(admin.TabularInline):
+class ShopInline(admin.TabularInline):
     """Inline for users administration."""
 
-    model = ShopList
+    model = Shop
     fk_name = "user"
     extra = 0
 
@@ -64,7 +64,7 @@ class FoodUserAdmin(UserAdmin):
     ordering = ('email',)
     inlines = (
         SubscriptionInline,
-        ShopListInline,
+        ShopInline,
     )
 
     def how_many_subscriptions(self, obj):

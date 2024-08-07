@@ -206,13 +206,13 @@ class Favorite(BaseModel):
         ]
 
 
-class ShopList(BaseModel):
+class Shop(BaseModel):
     """Model for user shop list."""
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='recipe_add_shoplist'
+        related_name='recipe_add_shop'
     )
     # оставил тут поле чтобы для него было отдельное related_name
     # без этого ошибка в скачивании списка покупок
@@ -220,7 +220,7 @@ class ShopList(BaseModel):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='user_add_shoplist'
+        related_name='user_add_shop'
     )
 
     class Meta:
@@ -229,6 +229,6 @@ class ShopList(BaseModel):
         constraints = [
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
-                name='unique_user_recipe_shoplist'
+                name='unique_user_recipe_shop'
             )
         ]

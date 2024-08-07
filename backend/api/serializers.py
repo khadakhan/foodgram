@@ -14,7 +14,7 @@ from recipes.models import (
     Recipe,
     RecipeIngredientsAmount,
     RecipeTag,
-    ShopList,
+    Shop,
     Tag
 )
 
@@ -326,7 +326,7 @@ class FavoriteShopCreateSerializer(serializers.Serializer):
             )
         if (
             self.context['action'] == 'add_shop'
-            and ShopList.objects.filter(
+            and Shop.objects.filter(
                 user=self.context['request'].user, recipe=data['id']
             ).exists()
         ):
@@ -335,7 +335,7 @@ class FavoriteShopCreateSerializer(serializers.Serializer):
             )
         if (
             self.context['action'] == 'delete_shop'
-            and not ShopList.objects.filter(
+            and not Shop.objects.filter(
                 user=self.context['request'].user, recipe=data['id']
             ).exists()
         ):

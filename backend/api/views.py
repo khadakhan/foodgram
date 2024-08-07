@@ -34,7 +34,7 @@ from recipes.models import (
     Ingredient,
     Recipe,
     RecipeIngredientsAmount,
-    ShopList,
+    Shop,
     Tag,
     User
 )
@@ -185,7 +185,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             is_favorited = user.favorite_set.filter(
                 recipe=OuterRef('pk')
             )
-            is_in_shopping_cart = user.recipe_add_shoplist.filter(
+            is_in_shopping_cart = user.recipe_add_shop.filter(
                 recipe=OuterRef('pk')
             )
             return Recipe.objects.annotate(
@@ -228,9 +228,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe=recipe
             ).delete()
         if action == 'add_shop':
-            ShopList.objects.create(recipe=recipe, user=request.user)
+            Shop.objects.create(recipe=recipe, user=request.user)
         if action == 'delete_shop':
-            ShopList.objects.filter(
+            Shop.objects.filter(
                 user=request.user,
                 recipe=recipe
             ).delete()
@@ -301,7 +301,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shop_ingredients = RecipeIngredientsAmount.objects.filter(
-            recipe__user_add_shoplist__user=user
+            recipe__user_add_shop__user=user
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit',
