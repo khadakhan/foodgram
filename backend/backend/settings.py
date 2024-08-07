@@ -11,8 +11,7 @@ SECRET_KEY = os.getenv(
     default='django-insecure-wd8h0agh$v#^f$kn-e0h5$7=_$fe^@&%mt6r$)w)=26yq&kg9!'
 )
 
-# DEBUG = bool(os.getenv('LOCAL_DEBUG', default=None))
-DEBUG = True
+DEBUG = bool(os.getenv('LOCAL_DEBUG', default=None))
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS',

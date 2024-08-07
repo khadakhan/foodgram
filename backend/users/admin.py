@@ -68,7 +68,7 @@ class FoodUserAdmin(UserAdmin):
     )
 
     def how_many_subscriptions(self, obj):
-        return obj.subscriptions.count()
+        return obj.user_subscriptions.count()
 
     def how_many_recipes(self, obj):
         return obj.recipes.count()
