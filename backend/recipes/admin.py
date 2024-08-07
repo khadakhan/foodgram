@@ -27,11 +27,13 @@ class ShopInline(admin.TabularInline):
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    readonly_fields = ('how_many_add_in_favorite',)
+    readonly_fields = ('get_is_favorite',)
     list_display = (
         'name',
         'author',
-        'how_many_add_in_favorite',
+        'get_is_favorite',
+        'get_tags',
+        'get_ingredients'
     )
     search_fields = ('author',)
     list_filter = ('tags',)
@@ -43,8 +45,19 @@ class RecipeAdmin(admin.ModelAdmin):
         ShopInline,
     )
 
-    def how_many_add_in_favorite(self, obj):
+    @admin.display(description='Кол-во добавлений в избранное')
+    def get_is_favorite(self, obj):
         return obj.favorite_set.count()
+
+    @admin.display(description='Теги')
+    def get_tags(self, obj):
+        return ', '.join([tag.name for tag in obj.tags.all()])
+
+    @admin.display(description='Ингредиенты')
+    def get_ingredients(self, obj):
+        return ', '.join(
+            [ingredient.name for ingredient in obj.ingredients.all()]
+        )
 
 
 class IngredientAdmin(admin.ModelAdmin):
