@@ -9,7 +9,7 @@ class SubscriptionInline(admin.TabularInline):
     """Inline for users administration."""
 
     model = Subscription
-    fk_name = "user"
+    fk_name = 'user'
     extra = 0
 
 

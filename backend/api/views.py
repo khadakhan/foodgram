@@ -1,8 +1,7 @@
 import os
 
-import pandas as pd
 from django.http import FileResponse
-from django.db.models import Count, Exists, OuterRef
+from django.db.models import Count, Exists, OuterRef, Sum
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
@@ -303,23 +302,22 @@ class RecipeViewSet(viewsets.ModelViewSet):
         user = request.user
         shop_ingredients = RecipeIngredientsAmount.objects.filter(
             recipe__user_add_shoplist__user=user
-        ).values('ingredient', 'amount').order_by('ingredient')
-        shop_list = [
-            [
-                Ingredient.objects.filter(
-                    pk=item['ingredient']
-                ).values('name', 'measurement_unit')[0]['name'],
-                Ingredient.objects.filter(
-                    pk=item['ingredient']
-                ).values('name', 'measurement_unit')[0]['measurement_unit'],
-                item['amount'],
-            ]
-            for item in shop_ingredients
-        ]
-        df = pd.DataFrame(shop_list, columns=['ingredient', 'unit', 'amount'])
-        df_grouped = df.groupby(['ingredient', 'unit']).amount.sum()
-        df_grouped.to_csv('recipes/shop_list/shop_list.txt')
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit',
+        ).annotate(
+            amount=Sum('amount')
+        ).order_by('ingredient__name')
+
+        shop_list = 'название' + ', ' + 'ед.изм' + ', ' + 'кол-во'
+        for item in shop_ingredients:
+            shop_list += (
+                '\n' + item['ingredient__name']
+                + ', ' + item['ingredient__measurement_unit']
+                + ', ' + str(item['amount'])
+            )
         response = FileResponse(
-            open('recipes/shop_list/shop_list.txt', 'rb'),
+            shop_list,
+            content_type='text'
         )
         return response

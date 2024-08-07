@@ -11,11 +11,7 @@ SECRET_KEY = os.getenv(
     default='django-insecure-wd8h0agh$v#^f$kn-e0h5$7=_$fe^@&%mt6r$)w)=26yq&kg9!'
 )
 
-LOCAL_DEBUG = os.getenv('LOCAL_DEBUG', default='off')
-if LOCAL_DEBUG == 'off':
-    DEBUG = False
-else:
-    DEBUG = True
+DEBUG = bool(os.getenv('LOCAL_DEBUG', default=None))
 
 ALLOWED_HOSTS = os.getenv(
     'ALLOWED_HOSTS',
@@ -144,4 +140,3 @@ REST_FRAMEWORK = {
     ],
     'SEARCH_PARAM': 'name',
 }
-# DATA_UPLOAD_MAX_NUMBER_FIELDS = 3000

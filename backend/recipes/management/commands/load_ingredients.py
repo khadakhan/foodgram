@@ -1,4 +1,4 @@
-import csv
+import csv, os
 
 from django.core.management.base import BaseCommand
 
@@ -11,7 +11,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             'file_path',
-            default='C:/Dev/foodgram/data/test_load.csv',
+            default=os.path.abspath('test_load.csv'),
             nargs='?',
             type=str
         )
@@ -31,9 +31,12 @@ class Command(BaseCommand):
                     )
                     for row in reader
                 ]
-                print('Загрузка началась.')
-                Ingredient.objects.bulk_create(objs)
-                print('Загрузка закончилась.')
+                self.stdout.write('Загрузка началась.')
+                try:
+                    Ingredient.objects.bulk_create(objs)
+                except Exception as e:
+                    self.stdout(f'при загрузке произошла ошибка {e}')
+                self.stdout.write('Загрузка закончилась.')
         except FileNotFoundError as e:
             print(f'{e} Файл не найден, укажите другой путь поcле'
                   f' команды load_ingredients')

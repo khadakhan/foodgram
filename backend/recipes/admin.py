@@ -5,7 +5,6 @@ from recipes.models import (
     Favorite,
     Recipe,
     RecipeIngredientsAmount,
-    RecipeTag,
     ShopList,
     Tag
 )
@@ -19,12 +18,6 @@ class RecipeIngredientsAmountInline(admin.TabularInline):
 
 class FavoriteInline(admin.TabularInline):
     model = Favorite
-    extra = 0
-
-
-class RecipeTagInline(admin.TabularInline):
-    model = RecipeTag
-    min_num = 1
     extra = 0
 
 
@@ -46,7 +39,6 @@ class RecipeAdmin(admin.ModelAdmin):
     filter_horizontal = ('tags',)
     inlines = (
         RecipeIngredientsAmountInline,
-        RecipeTagInline,
         FavoriteInline,
         ShopListInline,
     )
