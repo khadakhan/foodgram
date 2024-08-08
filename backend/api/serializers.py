@@ -7,7 +7,7 @@ from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from api.const import DOMAIN, SUBSCRIPTION_AMOUNT_RECIPE
+from api.const import DOMAIN, MAX_VALUE, MIN_VALUE
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -42,10 +42,7 @@ class UserListRetrieveSerializer(UserSerializer):
 
     def get_is_subscribed(self, obj):
         request = self.context['request']
-        return request.user.id in obj.author_subscriptions.all().values_list(
-            'user',
-            flat=True
-        )
+        return bool(obj.author_subscriptions.filter(user=request.user.id))
 
 
 class RecipesInSubscriptionSerializer(serializers.ModelSerializer):
@@ -70,10 +67,15 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
             recipes_limit = (
                 int(self.context['request'].query_params['recipes_limit'])
             )
+        # выскакивает именно это исключение
         except MultiValueDictKeyError:
-            recipes_limit = SUBSCRIPTION_AMOUNT_RECIPE
+            recipes_limit = None
         recipes_list = obj.recipes.all()[:recipes_limit]
-        return RecipesInSubscriptionSerializer(recipes_list, many=True).data
+        return RecipesInSubscriptionSerializer(
+            recipes_list,
+            context=self.context,
+            many=True
+        ).data
 
 
 class SubscriptionCreateSerializer(serializers.Serializer):
@@ -162,15 +164,24 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class IdAmountSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(min_value=1, max_value=10000)
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.values('id'),
+    )
+    amount = serializers.IntegerField(
+        min_value=MIN_VALUE,
+        max_value=MAX_VALUE
+    )
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = IdAmountSerializer(many=True)
-    tags = serializers.ListField(child=serializers.IntegerField())
+    tags = serializers.ListField(child=serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.values('id')
+    ))
     image = Base64ImageField(allow_null=True, allow_empty_file=True)
-    cooking_time = serializers.IntegerField(min_value=1, max_value=600)
+    # image = Base64ImageField()
+    cooking_time = serializers.IntegerField(min_value=MIN_VALUE,
+                                            max_value=MAX_VALUE)
 
     class Meta:
         model = Recipe
@@ -184,20 +195,21 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         )
 
     @staticmethod
-    def create_new_ingredients(id_amount, recipe):
+    def create_new_ingredients(ingredients, recipe):
         objs = [
             RecipeIngredientsAmount(
                 recipe=recipe,
-                ingredient=Ingredient.objects.get(pk=item['id']),
+                ingredient_id=item['id']['id'],
                 amount=item['amount']
             )
-            for item in id_amount
+            for item in ingredients
         ]
         RecipeIngredientsAmount.objects.bulk_create(objs)
 
     def create(self, validated_data):
-        id_amount = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+        tags = [item['id'] for item in tags]
         author = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data, author=author)
         short_link = 'https://{domain}/{link_id}'.format(
@@ -206,18 +218,20 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         )
         recipe.short_link = short_link
         recipe.save()
-        self.create_new_ingredients(id_amount, recipe)
+        self.create_new_ingredients(ingredients, recipe)
+        print(tags)
         recipe.tags.set(
             Tag.objects.filter(id__in=tags)
         )
         return recipe
 
     def update(self, instance, validated_data):
-        id_amount = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+        tags = [item['id'] for item in tags]
         instance.tags.remove()
         instance.ingredient_amount.all().delete()
-        self.create_new_ingredients(id_amount, instance)
+        self.create_new_ingredients(ingredients, instance)
         instance.tags.set(
             Tag.objects.filter(id__in=tags)
         )
@@ -230,41 +244,25 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ).data
 
     def validate(self, data):
-        if 'ingredients' not in data:
+        if 'ingredients' not in data or not data['ingredients']:
             raise serializers.ValidationError(
                 {'ingredients': 'Укажите ингредиенты!'}
             )
-        if not data['ingredients']:
-            raise serializers.ValidationError(
-                {'ingredients': 'Заполните ингредиенты.'}
-            )
-        id_list = [item['id'] for item in data['ingredients']]
+        id_list = [item['id']['id'] for item in data['ingredients']]
         for id in id_list:
             if id_list.count(id) > 1:
                 raise serializers.ValidationError(
                     {'ingredients': 'Ингредиенты не должны повторяться.'}
                 )
-            if not Ingredient.objects.filter(pk=id).exists():
-                raise serializers.ValidationError(
-                    {'ingredients': 'Такого ингредиента нет.'}
-                )
-        if 'tags' not in data:
+        if 'tags' not in data or not data['tags']:
             raise serializers.ValidationError(
                 {'tags': 'Укажите теги!'}
             )
-        if not data['tags']:
+        tags_ready = [tag['id'] for tag in data['tags']]
+        if len(set(tags_ready)) != len(data['tags']):
             raise serializers.ValidationError(
-                {'tags': 'Заполните теги.'}
+                {'tags': 'Теги в рецепте не должны повторяться.'}
             )
-        for tag_id in data['tags']:
-            if data['tags'].count(tag_id) > 1:
-                raise serializers.ValidationError(
-                    {'tags': 'Теги в рецепте не должны повторяться.'}
-                )
-            if not Tag.objects.filter(pk=tag_id).exists():
-                raise serializers.ValidationError(
-                    {'tags': 'Такого тега нет.'}
-                )
         if not data['image']:
             raise serializers.ValidationError(
                 {'image': 'Укажите картинку!'}

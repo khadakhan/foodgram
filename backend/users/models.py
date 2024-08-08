@@ -67,4 +67,4 @@ class Subscription(models.Model):
 
     def __str__(self):
         return (f'{self.user.username} subscribed'
-                f' on {self.subscription.username}')
+                f' on {self.author.username}')

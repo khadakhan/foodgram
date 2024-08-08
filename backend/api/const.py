@@ -1,2 +1,4 @@
 SUBSCRIPTION_AMOUNT_RECIPE = 10
 DOMAIN = 'foodgramdo.zapto.org'
+MIN_VALUE = 1
+MAX_VALUE = 32767
