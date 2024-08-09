@@ -16,6 +16,9 @@ from recipes.models import (
     Shop,
     Tag
 )
+from users.models import (
+    Subscription,
+)
 
 User = get_user_model()
 # =============================Users=======================================
@@ -45,14 +48,9 @@ class UserListRetrieveSerializer(UserSerializer):
         return bool(obj.author_subscriptions.filter(user=request.user.id))
 
 
-class RecipesInSubscriptionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
-
-
 class SubscriptionSerializer(UserListRetrieveSerializer):
-    recipes_count = serializers.IntegerField()
+    # recipes_count = serializers.IntegerField()
+    recipes_count = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
 
     class Meta(UserListRetrieveSerializer):
@@ -71,19 +69,24 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
         except MultiValueDictKeyError:
             recipes_limit = None
         recipes_list = obj.recipes.all()[:recipes_limit]
-        return RecipesInSubscriptionSerializer(
+        return FavoriteShopSubscriptSerializer(
             recipes_list,
             context=self.context,
             many=True
         ).data
 
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
-class SubscriptionCreateSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
+
+class SubscriptionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscription
+        fields = ('user', 'author')
 
     def validate(self, data):
-        user = self.context['request'].user
-        author = get_object_or_404(User, pk=data['id'])
+        user = data['user']
+        author = data['author']
         user_subscriptions_id = user.user_subscriptions.values_list(
             'author',
             flat=True
@@ -99,14 +102,9 @@ class SubscriptionCreateSerializer(serializers.Serializer):
         return data
 
     def to_representation(self, instance):
-        subscription = get_object_or_404(
-            User.objects.annotate(
-                recipes_count=Count('recipes')
-            ),
-            pk=instance['id']
-        )
+        author = instance['author']
         return SubscriptionSerializer(
-            subscription,
+            author,
             context=self.context
         ).data
 
@@ -280,7 +278,7 @@ class ShortLinkSerializer(serializers.ModelSerializer):
         }
 
 
-class FavoriteShopSerializer(serializers.ModelSerializer):
+class FavoriteShopSubscriptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (

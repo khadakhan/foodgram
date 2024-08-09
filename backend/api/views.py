@@ -14,7 +14,7 @@ from api.permissions import (
     RecipePermission,
 )
 from api.serializers import (
-    FavoriteShopSerializer,
+    FavoriteShopSubscriptSerializer,
     FavoriteShopCreateSerializer,
     IngredientSerializer,
     RecipeSerializer,
@@ -86,10 +86,7 @@ class FoodUserViewSet(UserViewSet):
     def subscriptions(self, request):
         user = request.user
         queryset = User.objects.filter(
-            id__in=user.user_subscriptions.values_list(
-                'author',
-                flat=True
-            )
+            author_subscriptions__user=user
         ).annotate(
             recipes_count=Count(
                 'recipes'
@@ -122,10 +119,11 @@ class FoodUserViewSet(UserViewSet):
         author = get_object_or_404(User, pk=id)
         user = request.user
         serializer = SubscriptionCreateSerializer(
-            data={'id': id},
+            data={'user': user.id, 'author': author.id},
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
+        # serializer.save() - не сработало так
         Subscription.objects.create(user=user, author=author)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -227,7 +225,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         self.create_favorite_shop(recipe, request, self.action)
-        serializer = FavoriteShopSerializer(recipe)
+        serializer = FavoriteShopSubscriptSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @add_favorite.mapping.delete
@@ -256,7 +254,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         self.create_favorite_shop(recipe, request, self.action)
-        serializer = FavoriteShopSerializer(recipe)
+        serializer = FavoriteShopSubscriptSerializer(recipe)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @add_shop.mapping.delete
