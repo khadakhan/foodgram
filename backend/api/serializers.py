@@ -1,7 +1,5 @@
 import short_url
 from django.contrib.auth import get_user_model
-from django.db.models import Count
-from django.shortcuts import get_object_or_404
 from django.utils.datastructures import MultiValueDictKeyError
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -260,6 +258,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'tags': 'Теги в рецепте не должны повторяться.'}
             )
+        # ругется тест без этой проверки
         if not data['image']:
             raise serializers.ValidationError(
                 {'image': 'Укажите картинку!'}
