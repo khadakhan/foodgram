@@ -62,7 +62,7 @@ class Subscription(models.Model):
         ]
 
     def clean(self):
-        if self.user == self.subscription:
+        if self.user == self.author:
             raise ValidationError('Нельзя подписаться на себя')
 
     def __str__(self):

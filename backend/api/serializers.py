@@ -179,7 +179,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.values('id')
     ))
     image = Base64ImageField(allow_null=True, allow_empty_file=True)
-    # image = Base64ImageField()
     cooking_time = serializers.IntegerField(min_value=MIN_VALUE,
                                             max_value=MAX_VALUE)
 

@@ -140,3 +140,14 @@ REST_FRAMEWORK = {
     ],
     'SEARCH_PARAM': 'name',
 }
+
+DJOSER = {
+    'SERIALIZERS': {
+        'user': 'api.serializers.UserListRetrieveSerializer',
+        'current_user': 'api.serializers.UserListRetrieveSerializer',
+    },
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.AllowAny',],
+        'user_list': ['rest_framework.permissions.AllowAny',],
+    }
+}

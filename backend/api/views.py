@@ -1,5 +1,3 @@
-import os
-
 from django.http import FileResponse
 from django.db.models import Count, Exists, OuterRef, Sum
 from django.shortcuts import get_object_or_404
@@ -8,12 +6,12 @@ from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 
 from api.filters import RecipeFilter
 from api.pagination import UsersRecipesPagination
 from api.permissions import (
-    IsAuthor,
+    RecipePermission,
 )
 from api.serializers import (
     FavoriteShopSerializer,
@@ -26,7 +24,6 @@ from api.serializers import (
     SubscriptionCreateSerializer,
     TagSerializer,
     UserAvatarSerializer,
-    UserListRetrieveSerializer,
 )
 
 from recipes.models import (
@@ -51,45 +48,34 @@ class FoodUserViewSet(UserViewSet):
     @action(
         methods=('put',),
         detail=False,
-        url_path='me/avatar'
+        url_path='me/avatar',
+        permission_classes=(IsAuthenticated,)
     )
     def me_avatar(self, request):
-        serializer = UserAvatarSerializer(data=request.data)
+        serializer = UserAvatarSerializer(
+            instance=request.user,
+            context={'request': request},
+            data=request.data
+        )
         serializer.is_valid(raise_exception=True)
-        validated_data = dict(serializer.validated_data)
-        user = request.user
-        user.avatar = validated_data['avatar']
-        user.save()
-        instance_serializer = UserAvatarSerializer(user)
+        serializer.save()
         return Response(
-            instance_serializer.data,
+            serializer.data,
             status=status.HTTP_200_OK
         )
 
     @me_avatar.mapping.delete
     def delete_me_avatar(self, request):
         user = request.user
-        os.remove(user.avatar.path)
-        user.avatar = ''
-        user.save()
+        user.avatar.delete(save=True)
         return Response(
             data=None,
             status=status.HTTP_204_NO_CONTENT
         )
 
-    def get_serializer_class(self):
-        # а вот без этого не получается подсунуть сериалайзер
-        if (self.action == 'list' or self.action == 'retrieve'
-           or self.action == 'me'):
-            return UserListRetrieveSerializer
-        return super().get_serializer_class()
-
     def get_permissions(self):
         if self.action == 'me':
             return (IsAuthenticated(),)
-        # нужно для анонимных юзеров
-        if self.action == 'list' or self.action == 'retrieve':
-            return (AllowAny(),)
         return super().get_permissions()
 
     @action(
@@ -111,7 +97,7 @@ class FoodUserViewSet(UserViewSet):
         )
 
         page = self.paginate_queryset(queryset)
-        if page is not None:
+        if page:
             context = {'request': self.request}
             serializer = SubscriptionSerializer(
                 page,
@@ -129,7 +115,8 @@ class FoodUserViewSet(UserViewSet):
     @action(
         methods=('post',),
         detail=False,
-        url_path=r'(?P<id>\d+)/subscribe'
+        url_path=r'(?P<id>\d+)/subscribe',
+        permission_classes=(IsAuthenticated,)
     )
     def create_subscription(self, request, id):
         author = get_object_or_404(User, pk=id)
@@ -144,18 +131,14 @@ class FoodUserViewSet(UserViewSet):
 
     @create_subscription.mapping.delete
     def delete_subscription(self, request, id):
-        if not User.objects.filter(pk=id).exists():
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        author = get_object_or_404(User, pk=id)
         user = request.user
-        user_subscriptions = user.user_subscriptions
-        user_subscriptions_id = user_subscriptions.values_list(
-            'author',
-            flat=True
-        )
-        if int(id) not in user_subscriptions_id:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        user_subscriptions.filter(author=id).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        delete_status = Subscription.objects.filter(
+            user=user, author=author
+        ).delete()
+        if delete_status[0] == 1:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # =============================Recipes=======================================
 
@@ -168,8 +151,8 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['^name']
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^name',)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -178,6 +161,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    permission_classes = (RecipePermission,)
 
     def get_queryset(self):
         user = self.request.user
@@ -195,7 +179,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return super().get_queryset()
 
     def get_serializer_class(self):
-        if self.action == 'create' or self.action == 'partial_update':
+        if self.action in ('create', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeSerializer
 
@@ -210,11 +194,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=id)
         serializer = ShortLinkSerializer(recipe)
         return Response(serializer.data)
-
-    def get_permissions(self):
-        if self.action == 'destroy' or self.action == 'partial_update':
-            return (IsAuthor(),)
-        return super().get_permissions()
 
 # ------------favorite_add_delete---------------------------------
 
