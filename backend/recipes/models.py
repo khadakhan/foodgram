@@ -1,3 +1,4 @@
+import short_url
 from django.db import models
 from django.core.validators import (
     MinValueValidator,
@@ -5,6 +6,7 @@ from django.core.validators import (
 )
 
 from recipes.const import (
+    DOMAIN,
     TITLE_LENGTH,
     TAG_LENGTH,
     MEASUREMENT_UNIT_LENGTH,
@@ -102,7 +104,13 @@ class Recipe(models.Model):
         Tag,
         verbose_name='Теги',
     )
-    short_link = models.URLField(null=True, blank=True)
+
+    @property
+    def short_link(self):
+        return 'https://{domain}/{link_id}'.format(
+            domain=DOMAIN,
+            link_id=short_url.encode_url(self.id, min_length=10)
+        )
 
     class Meta:
         verbose_name = 'рецепт'

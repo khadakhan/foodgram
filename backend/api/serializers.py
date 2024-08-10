@@ -1,11 +1,10 @@
-import short_url
 from django.contrib.auth import get_user_model
 from django.utils.datastructures import MultiValueDictKeyError
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
 
-from api.const import DOMAIN, MAX_VALUE, MIN_VALUE
+from api.const import MAX_VALUE, MIN_VALUE
 from recipes.models import (
     BaseModel,
     Favorite,
@@ -208,11 +207,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags = [item['id'] for item in tags]
         author = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data, author=author)
-        short_link = 'https://{domain}/{link_id}'.format(
-            domain=DOMAIN,
-            link_id=short_url.encode_url(recipe.id, min_length=10)
-        )
-        recipe.short_link = short_link
         recipe.save()
         self.create_new_ingredients(ingredients, recipe)
         print(tags)
@@ -245,11 +239,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
                 {'ingredients': 'Укажите ингредиенты!'}
             )
         id_list = [item['id']['id'] for item in data['ingredients']]
-        for id in id_list:
-            if id_list.count(id) > 1:
-                raise serializers.ValidationError(
-                    {'ingredients': 'Ингредиенты не должны повторяться.'}
-                )
+        if len(set(id_list)) != len(id_list):
+            raise serializers.ValidationError(
+                {'ingredients': 'Ингредиенты не должны повторяться.'}
+            )
         if 'tags' not in data or not data['tags']:
             raise serializers.ValidationError(
                 {'tags': 'Укажите теги!'}
@@ -270,9 +263,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 class ShortLinkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = [
+        fields = (
             'short-link',
-        ]
+        )
         extra_kwargs = {
             'short-link': {'source': 'short_link'},
         }

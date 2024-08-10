@@ -154,7 +154,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
     pagination_class = UsersRecipesPagination
     serializer_class = RecipeSerializer
     filter_backends = (DjangoFilterBackend,)
@@ -162,6 +161,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (RecipePermission,)
 
     def get_queryset(self):
+        queryset = Recipe.objects.select_related(
+            'author'
+        ).prefetch_related(
+            'tags',
+            'ingredients'
+        )
         user = self.request.user
         if user.is_authenticated:
             is_favorited = user.favorite_set.filter(
@@ -170,11 +175,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
             is_in_shopping_cart = user.recipe_add_shop.filter(
                 recipe=OuterRef('pk')
             )
-            return Recipe.objects.annotate(
+            return queryset.annotate(
                 is_favorited=Exists(is_favorited),
                 is_in_shopping_cart=Exists(is_in_shopping_cart)
             )
-        return super().get_queryset()
+        return queryset
 
     def get_serializer_class(self):
         if self.action in ('create', 'partial_update'):
