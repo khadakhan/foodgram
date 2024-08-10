@@ -14,8 +14,8 @@ from api.permissions import (
     RecipePermission,
 )
 from api.serializers import (
-    FavoriteShopSubscriptSerializer,
-    FavoriteShopCreateSerializer,
+    FavoriteCreateSerializer,
+    ShopCreateSerializer,
     IngredientSerializer,
     RecipeSerializer,
     RecipeCreateSerializer,
@@ -193,24 +193,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer = ShortLinkSerializer(recipe)
         return Response(serializer.data)
 
-# ------------favorite_add_delete---------------------------------
+# ---------------------------------------------
 
     @staticmethod
-    def create_favorite_shop(recipe, request, action):
-        if action == 'add_favorite':
-            Favorite.objects.create(recipe=recipe, user=request.user)
-        if action == 'delete_favorite':
-            Favorite.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).delete()
-        if action == 'add_shop':
-            Shop.objects.create(recipe=recipe, user=request.user)
-        if action == 'delete_shop':
-            Shop.objects.filter(
-                user=request.user,
-                recipe=recipe
-            ).delete()
+    def create_favorite_shop(serializer, pk, request):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        user = request.user
+        serializer = serializer(
+            data={'user': user.id, 'recipe': recipe.id},
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return serializer
+
+# ------------favorite_add_delete-----------------------------------------
 
     @action(
         methods=('post',),
@@ -218,26 +215,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path=r'(?P<id>\d+)/favorite'
     )
     def add_favorite(self, request, id):
-        recipe = get_object_or_404(Recipe, pk=id)
-        serializer = FavoriteShopCreateSerializer(
-            data={'id': id},
-            context={'request': request, 'action': self.action}
+        return Response(
+            self.create_favorite_shop(
+                serializer=FavoriteCreateSerializer,
+                pk=id,
+                request=request
+            ).data,
+            status=status.HTTP_201_CREATED
         )
-        serializer.is_valid(raise_exception=True)
-        self.create_favorite_shop(recipe, request, self.action)
-        serializer = FavoriteShopSubscriptSerializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @add_favorite.mapping.delete
     def delete_favorite(self, request, id):
-        recipe = get_object_or_404(Recipe, pk=id)
-        serializer = FavoriteShopCreateSerializer(
-            data={'id': id},
-            context={'request': request, 'action': self.action}
-        )
-        serializer.is_valid(raise_exception=True)
-        self.create_favorite_shop(recipe, request, self.action)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        delete_status = Favorite.objects.filter(
+            user=request.user,
+            recipe=get_object_or_404(Recipe, pk=id)
+        ).delete()
+        if delete_status[0] == 1:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # --------------shop_cart_add_delete----------------------
 
@@ -247,26 +242,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
         url_path=r'(?P<id>\d+)/shopping_cart'
     )
     def add_shop(self, request, id):
-        recipe = get_object_or_404(Recipe, pk=id)
-        serializer = FavoriteShopCreateSerializer(
-            data={'id': id},
-            context={'request': request, 'action': self.action}
+        return Response(
+            self.create_favorite_shop(
+                serializer=ShopCreateSerializer,
+                pk=id,
+                request=request
+            ).data,
+            status=status.HTTP_201_CREATED
         )
-        serializer.is_valid(raise_exception=True)
-        self.create_favorite_shop(recipe, request, self.action)
-        serializer = FavoriteShopSubscriptSerializer(recipe)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @add_shop.mapping.delete
     def delete_shop(self, request, id):
-        recipe = get_object_or_404(Recipe, pk=id)
-        serializer = FavoriteShopCreateSerializer(
-            data={'id': id},
-            context={'request': request, 'action': self.action}
-        )
-        serializer.is_valid(raise_exception=True)
-        self.create_favorite_shop(recipe, request, self.action)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        delete_status = Shop.objects.filter(
+            user=request.user,
+            recipe=get_object_or_404(Recipe, pk=id)
+        ).delete()
+        if delete_status[0] == 1:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_400_BAD_REQUEST)
 
 # --------------------download shop list-------------------------------
 

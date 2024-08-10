@@ -7,6 +7,7 @@ from rest_framework import serializers
 
 from api.const import DOMAIN, MAX_VALUE, MIN_VALUE
 from recipes.models import (
+    BaseModel,
     Favorite,
     Ingredient,
     Recipe,
@@ -288,46 +289,47 @@ class FavoriteShopSubscriptSerializer(serializers.ModelSerializer):
         )
 
 
-class FavoriteShopCreateSerializer(serializers.Serializer):
-    id = serializers.IntegerField(required=False)
+class FavoriteShopCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseModel
+        fields = (
+            'user',
+            'recipe',
+        )
+        abstract = True
 
     def validate(self, data):
-        if (
-            self.context['action'] == 'add_favorite'
-            and Favorite.objects.filter(
-                user=self.context['request'].user, recipe=data['id']
-            ).exists()
-        ):
+        model = self.Meta.model
+        if model.objects.filter(
+                user=data['user'],
+                recipe=data['recipe']
+        ).exists():
             raise serializers.ValidationError(
-                {'favorite error': 'Рецепт уже добавлен в избранное'}
-            )
-        if (
-            self.context['action'] == 'delete_favorite'
-            and not Favorite.objects.filter(
-                user=self.context['request'].user, recipe=data['id']
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                {'favorite error': 'Удаление невозможно. '
-                 'Рецепта нет в избранном'}
-            )
-        if (
-            self.context['action'] == 'add_shop'
-            and Shop.objects.filter(
-                user=self.context['request'].user, recipe=data['id']
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                {'shop_cart error': 'Рецепт уже добавлен'}
-            )
-        if (
-            self.context['action'] == 'delete_shop'
-            and not Shop.objects.filter(
-                user=self.context['request'].user, recipe=data['id']
-            ).exists()
-        ):
-            raise serializers.ValidationError(
-                {'shopping_cart error': 'Удаление невозможно. '
-                 'Рецепта нет в корзине покупок'}
+                {f'{model._meta.verbose_name} error': 'Был добавлен ранее.'}
             )
         return data
+
+    def to_representation(self, instance):
+        recipe = instance.recipe
+        return FavoriteShopSubscriptSerializer(
+            recipe,
+            context=self.context
+        ).data
+
+
+class FavoriteCreateSerializer(FavoriteShopCreateSerializer):
+    class Meta:
+        model = Favorite
+        fields = (
+            'user',
+            'recipe',
+        )
+
+
+class ShopCreateSerializer(FavoriteShopCreateSerializer):
+    class Meta:
+        model = Shop
+        fields = (
+            'user',
+            'recipe',
+        )
