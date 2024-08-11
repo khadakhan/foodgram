@@ -107,7 +107,7 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return SubscriptionSerializer(
-            instance['author'],
+            instance.author,
             context=self.context
         ).data
 

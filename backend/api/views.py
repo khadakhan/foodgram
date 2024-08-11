@@ -123,8 +123,7 @@ class FoodUserViewSet(UserViewSet):
             context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
-        # serializer.save() - не сработало так
-        Subscription.objects.create(user=user, author=author)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @create_subscription.mapping.delete
