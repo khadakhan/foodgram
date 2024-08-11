@@ -38,6 +38,10 @@ class FoodUser(AbstractUser):
     def __str__(self):
         return self.email
 
+    @property
+    def recipes_count(self):
+        return self.recipes.count()
+
 
 class Subscription(models.Model):
     """Model for following."""

@@ -87,12 +87,7 @@ class FoodUserViewSet(UserViewSet):
         user = request.user
         queryset = User.objects.filter(
             author_subscriptions__user=user
-        ).annotate(
-            recipes_count=Count(
-                'recipes'
-            )
         )
-
         page = self.paginate_queryset(queryset)
         if page:
             context = {'request': self.request}
@@ -102,12 +97,7 @@ class FoodUserViewSet(UserViewSet):
                 context=context
             )
             return self.get_paginated_response(serializer.data)
-
-        return Response(
-            SubscriptionSerializer(
-                queryset, many=True, context={'request': self.request}
-            )
-        )
+        return Response(status=status.HTTP_200_OK)
 
     @action(
         methods=('post',),

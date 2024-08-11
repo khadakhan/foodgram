@@ -50,8 +50,6 @@ class UserListRetrieveSerializer(UserSerializer):
 
 
 class SubscriptionSerializer(UserListRetrieveSerializer):
-    # recipes_count = serializers.IntegerField()
-    recipes_count = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
 
     class Meta(UserListRetrieveSerializer):
@@ -76,9 +74,6 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
             many=True
         ).data
 
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
-
 
 class SubscriptionCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -88,20 +83,15 @@ class SubscriptionCreateSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = data['user']
         author = data['author']
-        user_subscriptions_id = user.user_subscriptions.values_list(
-            'author',
-            flat=True
-        )
-        # user_subscriptions_id = user.user_subscriptions.values('author')
-        # user_subscriptions_id = User.objects.filter
-        # (author_subscriptions__user=user).values('id')
-        if (
-            user.id == author.id
-            or author.id in user_subscriptions_id
-        ):
+        if user.id == author.id:
             raise serializers.ValidationError(
-                {'subscription error': 'Нельзя подписаться на себя'
-                 ' или подписка уже есть.'}
+                {'subscription error': 'Нельзя подписаться на себя.'}
+            )
+        if Subscription.objects.filter(
+            user=user, author=author
+        ).exists():
+            raise serializers.ValidationError(
+                {'subscription error': 'Подписка уже есть.'}
             )
         return data
 
