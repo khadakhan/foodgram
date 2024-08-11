@@ -172,7 +172,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             is_favorited = user.favorite_set.filter(
                 recipe=OuterRef('pk')
             )
-            is_in_shopping_cart = user.recipe_add_shop.filter(
+            is_in_shopping_cart = user.shop_set.filter(
                 recipe=OuterRef('pk')
             )
             return queryset.annotate(
@@ -287,7 +287,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         user = request.user
         shop_ingredients = RecipeIngredientsAmount.objects.filter(
-            recipe__user_add_shop__user=user
+            recipe__shop_set__user=user
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit',

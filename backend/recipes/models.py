@@ -187,6 +187,7 @@ class Favorite(UserRecipeBaseModel):
     class Meta(UserRecipeBaseModel.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
+        default_related_name = 'favorite_set'
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
@@ -200,24 +201,11 @@ class Favorite(UserRecipeBaseModel):
 class Shop(UserRecipeBaseModel):
     """Model for user shop list."""
 
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='recipe_add_shop'
-    )
-    # оставил тут поле чтобы для него было отдельное related_name
-    # без этого ошибка в скачивании списка покупок
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='user_add_shop'
-    )
-
-    class Meta(UserRecipeBaseModel.Meta):
+    class Meta:
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
+        default_related_name = 'shop_set'
+
         constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),

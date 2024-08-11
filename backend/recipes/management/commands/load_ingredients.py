@@ -33,10 +33,7 @@ class Command(BaseCommand):
                     for row in reader
                 ]
                 self.stdout.write('Загрузка началась.')
-                try:
-                    Ingredient.objects.bulk_create(objs)
-                except Exception as e:
-                    self.stdout(f'при загрузке произошла ошибка {e}')
+                Ingredient.objects.bulk_create(objs, ignore_conflicts=True)
                 self.stdout.write('Загрузка закончилась.')
         except FileNotFoundError as e:
             self.stdout.write(f'{e} Файл не найден, укажите другой путь поcле'

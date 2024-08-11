@@ -232,9 +232,9 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ).data
 
     def validate(self, data):
-        # ругется тест без этой проверки
+        # # ругется тест без этой проверки
+        # if not data['ingredients']:
         if 'ingredients' not in data or not data['ingredients']:
-            # if not data['ingredients']:
             raise serializers.ValidationError(
                 {'ingredients': 'Укажите ингредиенты!'}
             )
