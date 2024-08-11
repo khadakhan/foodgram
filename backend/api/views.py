@@ -134,7 +134,7 @@ class FoodUserViewSet(UserViewSet):
         delete_status = Subscription.objects.filter(
             user=user, author=author
         ).delete()
-        if delete_status[0] == 1:
+        if delete_status[0]:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -212,6 +212,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save()
         return serializer
 
+    @staticmethod
+    def shop_list(shop_ingredients):
+        shop_list = 'название' + ', ' + 'ед.изм' + ', ' + 'кол-во'
+        for item in shop_ingredients:
+            shop_list += (
+                '\n' + item['ingredient__name']
+                + ', ' + item['ingredient__measurement_unit']
+                + ', ' + str(item['amount'])
+            )
+        return shop_list
+
 # ------------favorite_add_delete-----------------------------------------
 
     @action(
@@ -235,7 +246,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
         ).delete()
-        if delete_status[0] == 1:
+        if delete_status[0]:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -262,7 +273,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
         ).delete()
-        if delete_status[0] == 1:
+        if delete_status[0]:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -283,16 +294,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).annotate(
             amount=Sum('amount')
         ).order_by('ingredient__name')
-
-        shop_list = 'название' + ', ' + 'ед.изм' + ', ' + 'кол-во'
-        for item in shop_ingredients:
-            shop_list += (
-                '\n' + item['ingredient__name']
-                + ', ' + item['ingredient__measurement_unit']
-                + ', ' + str(item['amount'])
-            )
-        response = FileResponse(
-            shop_list,
+        return FileResponse(
+            self.shop_list(shop_ingredients),
             content_type='text'
         )
-        return response

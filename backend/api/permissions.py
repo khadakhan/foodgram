@@ -9,7 +9,7 @@ class RecipePermission(permissions.BasePermission):
         )
 
     def has_object_permission(self, request, view, obj):
-        if view.action in ('destroy', 'partial_update'):
-            return obj.author == request.user
-        if view.action == 'retrieve':
-            return True
+        return (
+            request.method in permissions.SAFE_METHODS
+            or obj.author == request.user
+        )

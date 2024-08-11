@@ -39,5 +39,5 @@ class Command(BaseCommand):
                     self.stdout(f'при загрузке произошла ошибка {e}')
                 self.stdout.write('Загрузка закончилась.')
         except FileNotFoundError as e:
-            print(f'{e} Файл не найден, укажите другой путь поcле'
-                  f' команды load_ingredients')
+            self.stdout.write(f'{e} Файл не найден, укажите другой путь поcле'
+                              f' команды load_ingredients')

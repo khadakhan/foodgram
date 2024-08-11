@@ -33,12 +33,12 @@ class Ingredient(models.Model):
     class Meta:
         verbose_name = 'ингредиенты'
         verbose_name_plural = 'Ингредиенты'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=('name', 'measurement_unit'),
                 name='unique_name_unit'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return self.name
@@ -105,13 +105,6 @@ class Recipe(models.Model):
         verbose_name='Теги',
     )
 
-    @property
-    def short_link(self):
-        return 'https://{domain}/{link_id}'.format(
-            domain=DOMAIN,
-            link_id=short_url.encode_url(self.id, min_length=10)
-        )
-
     class Meta:
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
@@ -119,6 +112,13 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def short_link(self):
+        return 'https://{domain}/{link_id}'.format(
+            domain=DOMAIN,
+            link_id=short_url.encode_url(self.id, min_length=10)
+        )
 
 
 class RecipeIngredientsAmount(models.Model):
@@ -158,7 +158,7 @@ class RecipeIngredientsAmount(models.Model):
                 f' {self.ingredient.measurement_unit}')
 
 
-class BaseModel(models.Model):
+class UserRecipeBaseModel(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -174,25 +174,32 @@ class BaseModel(models.Model):
         abstract = True
 
     def __str__(self):
-        return f'{self.recipe} добавил себе {self.user.username}'
+        return (
+            f'{self.recipe} добавил себе в '
+            f'{self._meta.verbose_name}'
+            f' {self.user.username}'
+        )
 
 
-class Favorite(BaseModel):
+class Favorite(UserRecipeBaseModel):
     """Model for favorite recipe."""
 
-    class Meta:
+    class Meta(UserRecipeBaseModel.Meta):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
-                name='unique_user_recipe'
-            )
-        ]
+                name=(
+                    'unique_user_recipe'
+                )
+            ),
+        )
 
 
-class Shop(BaseModel):
+class Shop(UserRecipeBaseModel):
     """Model for user shop list."""
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -208,12 +215,14 @@ class Shop(BaseModel):
         related_name='user_add_shop'
     )
 
-    class Meta:
+    class Meta(UserRecipeBaseModel.Meta):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Списки покупок'
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
                 fields=('user', 'recipe'),
-                name='unique_user_recipe_shop'
-            )
-        ]
+                name=(
+                    'unique_user_recipe_shop'
+                )
+            ),
+        )
