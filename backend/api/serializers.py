@@ -64,8 +64,7 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
             recipes_limit = (
                 int(self.context['request'].query_params['recipes_limit'])
             )
-        # выскакивает именно это исключение
-        except MultiValueDictKeyError:
+        except ValueError:
             recipes_limit = None
         recipes_list = obj.recipes.all()[:recipes_limit]
         return FavoriteShopSubscriptSerializer(
@@ -222,9 +221,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ).data
 
     def validate(self, data):
-        # # ругется тест без этой проверки
-        # if not data['ingredients']:
-        if 'ingredients' not in data or not data['ingredients']:
+        if not data['ingredients']:
             raise serializers.ValidationError(
                 {'ingredients': 'Укажите ингредиенты!'}
             )
@@ -240,11 +237,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         if len(set(data['tags'])) != len(data['tags']):
             raise serializers.ValidationError(
                 {'tags': 'Теги в рецепте не должны повторяться.'}
-            )
-        # ругется тест без этой проверки
-        if not data['image']:
-            raise serializers.ValidationError(
-                {'image': 'Укажите картинку!'}
             )
         return data
 
