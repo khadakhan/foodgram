@@ -122,8 +122,8 @@ class FoodUserViewSet(UserViewSet):
         user = request.user
         delete_status = Subscription.objects.filter(
             user=user, author=author
-        ).delete()
-        if delete_status[0]:
+        ).delete()[0]
+        if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -203,14 +203,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def shop_list(shop_ingredients):
-        shop_list = 'название' + ', ' + 'ед.изм' + ', ' + 'кол-во'
+        shop_list_text = 'название, ед.изм., кол-во'
         for item in shop_ingredients:
-            shop_list += (
-                '\n' + item['ingredient__name']
-                + ', ' + item['ingredient__measurement_unit']
-                + ', ' + str(item['amount'])
-            )
-        return shop_list
+            shop_list_text += (f'\n{item["ingredient__name"]}'
+                               f', {item["ingredient__measurement_unit"]}'
+                               f', {item["amount"]}')
+        return shop_list_text
 
 # ------------favorite_add_delete-----------------------------------------
 
@@ -234,8 +232,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         delete_status = Favorite.objects.filter(
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
-        ).delete()
-        if delete_status[0]:
+        ).delete()[0]
+        if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -261,8 +259,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         delete_status = Shop.objects.filter(
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
-        ).delete()
-        if delete_status[0]:
+        ).delete()[0]
+        if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 

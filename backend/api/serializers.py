@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+# from django.utils.datastructures import MultiValueDictKeyError
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -41,15 +42,16 @@ class UserListRetrieveSerializer(UserSerializer):
         fields = UserSerializer.Meta.fields + ('is_subscribed', 'avatar')
 
     def get_is_subscribed(self, obj):
-        return bool(
-            obj.author_subscriptions.filter(
-                user=self.context['request'].user.id
-            )
-        )
+        request = self.context['request']
+        return (request and request.user
+                and obj.author_subscriptions.filter(
+                    user=self.context['request'].user.id
+                ).exists())
 
 
 class SubscriptionSerializer(UserListRetrieveSerializer):
     recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.IntegerField()
 
     class Meta(UserListRetrieveSerializer):
         model = User
@@ -63,6 +65,7 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
             recipes_limit = (
                 int(self.context['request'].query_params['recipes_limit'])
             )
+        # except MultiValueDictKeyError:
         except ValueError:
             recipes_limit = None
         recipes_list = obj.recipes.all()[:recipes_limit]
@@ -220,23 +223,30 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         ).data
 
     def validate(self, data):
-        if not data['ingredients']:
+        if 'ingredients' not in data:
             raise serializers.ValidationError(
                 {'ingredients': 'Укажите ингредиенты!'}
             )
-        id_list = [item['id'].id for item in data['ingredients']]
+        ingredients = data['ingredients']
+        id_list = [item['id'].id for item in ingredients]
         if len(set(id_list)) != len(id_list):
             raise serializers.ValidationError(
                 {'ingredients': 'Ингредиенты не должны повторяться.'}
             )
-        if 'tags' not in data or not data['tags']:
+        if 'tags' not in data:
             raise serializers.ValidationError(
                 {'tags': 'Укажите теги!'}
             )
-        if len(set(data['tags'])) != len(data['tags']):
+        tags = data['tags']
+        if len(set(tags)) != len(tags):
             raise serializers.ValidationError(
                 {'tags': 'Теги в рецепте не должны повторяться.'}
             )
+        # # ругется тест без этой проверки
+        # if not data['image']:
+        #     raise serializers.ValidationError(
+        #         {'image': 'Укажите картинку!'}
+        #     )
         return data
 
 
