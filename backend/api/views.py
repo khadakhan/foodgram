@@ -120,9 +120,9 @@ class FoodUserViewSet(UserViewSet):
     def delete_subscription(self, request, id):
         author = get_object_or_404(User, pk=id)
         user = request.user
-        delete_status = Subscription.objects.filter(
+        delete_status, delete_dict = Subscription.objects.filter(
             user=user, author=author
-        ).delete()[0]
+        ).delete()
         if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -229,10 +229,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @add_favorite.mapping.delete
     def delete_favorite(self, request, id):
-        delete_status = Favorite.objects.filter(
+        delete_status, delete_dict = Favorite.objects.filter(
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
-        ).delete()[0]
+        ).delete()
         if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -256,10 +256,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @add_shop.mapping.delete
     def delete_shop(self, request, id):
-        delete_status = Shop.objects.filter(
+        delete_status, delete_dict = Shop.objects.filter(
             user=request.user,
             recipe=get_object_or_404(Recipe, pk=id)
-        ).delete()[0]
+        ).delete()
         if delete_status:
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)

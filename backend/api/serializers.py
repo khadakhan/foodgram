@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-# from django.utils.datastructures import MultiValueDictKeyError
 from djoser.serializers import UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
@@ -45,13 +44,13 @@ class UserListRetrieveSerializer(UserSerializer):
         request = self.context['request']
         return (request and request.user
                 and obj.author_subscriptions.filter(
-                    user=self.context['request'].user.id
+                    user=request.user.id
                 ).exists())
 
 
 class SubscriptionSerializer(UserListRetrieveSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField()
+    recipes_count = serializers.IntegerField(default=0)
 
     class Meta(UserListRetrieveSerializer):
         model = User
@@ -61,11 +60,10 @@ class SubscriptionSerializer(UserListRetrieveSerializer):
         )
 
     def get_recipes(self, obj):
+        request = self.context['request']
+        recipes_limit = request.POST.get('recipes_limit', 'привет')
         try:
-            recipes_limit = (
-                int(self.context['request'].query_params['recipes_limit'])
-            )
-        # except MultiValueDictKeyError:
+            recipes_limit = int(recipes_limit)
         except ValueError:
             recipes_limit = None
         recipes_list = obj.recipes.all()[:recipes_limit]
@@ -242,11 +240,6 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'tags': 'Теги в рецепте не должны повторяться.'}
             )
-        # # ругется тест без этой проверки
-        # if not data['image']:
-        #     raise serializers.ValidationError(
-        #         {'image': 'Укажите картинку!'}
-        #     )
         return data
 
 

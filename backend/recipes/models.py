@@ -12,7 +12,8 @@ from recipes.const import (
     MEASUREMENT_UNIT_LENGTH,
     INGREDIENT_NAME_LENGTH,
     MIN_VALUE,
-    MAX_VALUE
+    MAX_VALUE,
+    MIN_S_LENGTH
 )
 from users.models import FoodUser as User
 
@@ -115,9 +116,9 @@ class Recipe(models.Model):
 
     @property
     def short_link(self):
-        return 'https://{domain}/{link_id}'.format(
+        return 'https://{domain}/s/{link_id}'.format(
             domain=DOMAIN,
-            link_id=short_url.encode_url(self.id, min_length=10)
+            link_id=short_url.encode_url(self.id, min_length=MIN_S_LENGTH)
         )
 
 
