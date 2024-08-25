@@ -523,7 +523,7 @@ with the necessary values ​​in the project secrets on GitHub
 Add the Telegram account parameters to the secrets for sending the report:
 * in the TELEGRAM_TO variable, save the ID of your Telegram account. You can find out your ID from the Telegram bot @userinfobot. The bot will send notifications to the account with the specified ID;
 * in the TELEGRAM_TOKEN variable, save the token of your bot. You can get this token from the telegram bot @BotFather.
-![alt text](pipline-1.png)
+![alt text](image-1.png)
 
 Now your workflow consists of four phases:
 
